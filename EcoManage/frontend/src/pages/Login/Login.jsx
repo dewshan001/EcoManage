@@ -16,11 +16,38 @@ const Login = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Placeholder for future authentication logic
-        console.log('Login attempt:', formData);
-        navigate('/dashboard'); // Mock successful login goes to dashboard
+
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Login successful!');
+                console.log('User data:', data.user);
+
+                // Usually here you would save a session token or user info to localStorage/Context
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                navigate('/dashboard');
+            } else {
+                alert(data.message || 'Login failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Failed to connect to the server.');
+        }
     };
 
     return (
