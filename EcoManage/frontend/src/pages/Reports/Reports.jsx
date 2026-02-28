@@ -52,25 +52,34 @@ const Reports = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('submit'); // 'submit' | 'history'
 
-    // Mock initial history data
-    const [history, setHistory] = useState([
-        {
-            id: 'REP-10293',
-            location: 'Main St & 4th Ave, Colombo 03',
-            description: 'Large pile of electronic waste dumped near the park entrance.',
-            date: '2026-02-27T10:30:00',
-            status: 'In Progress',
-            imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=400&auto=format&fit=crop'
-        },
-        {
-            id: 'REP-10291',
-            location: 'Galle Road, Mount Lavinia',
-            description: 'Overflowing public bins by the bus stop.',
-            date: '2026-02-25T14:15:00',
-            status: 'Resolved',
-            imageUrl: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?q=80&w=400&auto=format&fit=crop'
+    // State for history data
+    const [history, setHistory] = useState([]);
+
+    // Fetch reports from the backend
+    const fetchReports = async () => {
+        try {
+            const userStr = sessionStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const userIdQuery = user ? `?userId=${user.id}` : '';
+
+            const response = await fetch(`http://localhost:5000/api/reports${userIdQuery}`);
+            if (response.ok) {
+                const data = await response.json();
+                setHistory(data);
+            } else {
+                console.error('Failed to fetch reports');
+            }
+        } catch (error) {
+            console.error('Error fetching reports:', error);
         }
-    ]);
+    };
+
+    // Fetch reports on component mount and when switching to history tab
+    useEffect(() => {
+        if (activeTab === 'history') {
+            fetchReports();
+        }
+    }, [activeTab]);
 
     // Handle Image upload and preview
     const handleImageChange = (e) => {
@@ -85,32 +94,44 @@ const Reports = () => {
     };
 
     // Handle Form Submission
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate API call delay
-        setTimeout(() => {
-            const newReport = {
-                id: `REP-${Math.floor(10000 + Math.random() * 90000)}`,
-                location,
-                description,
-                date: new Date().toISOString(),
-                status: 'Pending',
-                imageUrl: imagePreview || null
-            };
+        try {
+            const userStr = sessionStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
 
-            setHistory([newReport, ...history]);
+            const response = await fetch('http://localhost:5000/api/reports', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: user ? user.id : null,
+                    location,
+                    description,
+                    imageUrl: imagePreview
+                }),
+            });
 
-            // Reset form
-            setLocation('');
-            setDescription('');
-            setImagePreview(null);
+            if (response.ok) {
+                // Reset form
+                setLocation('');
+                setDescription('');
+                setImagePreview(null);
+
+                // Switch to history tab to see the new report
+                setActiveTab('history');
+            } else {
+                console.error('Failed to submit report');
+                // Could add user-facing error state here
+            }
+        } catch (error) {
+            console.error('Error submitting report:', error);
+        } finally {
             setIsSubmitting(false);
-
-            // Switch to history tab to see the new report
-            setActiveTab('history');
-        }, 1200);
+        }
     };
 
     // Helpers
@@ -293,7 +314,7 @@ const Reports = () => {
                                                 {/* Middle: Details */}
                                                 <div className="report-card-body">
                                                     <div className="report-card-header">
-                                                        <span className="report-id">{report.id}</span>
+                                                        <span className="report-id">{report.reportId}</span>
                                                         <span className={`status-badge ${statusConfig.color}`}>
                                                             {statusConfig.icon} {report.status}
                                                         </span>

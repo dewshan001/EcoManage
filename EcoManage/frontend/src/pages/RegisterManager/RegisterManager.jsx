@@ -37,7 +37,7 @@ const RegisterManager = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = sessionStorage.getItem('user');
         if (storedUser) {
             const user = JSON.parse(storedUser);
             if (user.role !== 'Admin') { navigate('/'); } else { setCurrentUser(user); }

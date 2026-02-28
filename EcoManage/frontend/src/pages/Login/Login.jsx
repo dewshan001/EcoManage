@@ -45,8 +45,8 @@ const Login = () => {
             if (response.ok) {
                 showAlert('Login successful! Redirecting...', 'success');
 
-                // Save user info to localStorage
-                localStorage.setItem('user', JSON.stringify(data.user));
+                // Save user info to sessionStorage
+                sessionStorage.setItem('user', JSON.stringify(data.user));
 
                 setTimeout(() => {
                     navigate('/dashboard');

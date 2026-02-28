@@ -17,7 +17,7 @@ import Settings from './pages/Settings/Settings';
 
 // Redirects guests (not logged in) to the login page
 const ProtectedRoute = ({ children }) => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     if (!storedUser) {
         return <Navigate to="/login" replace />;
     }
@@ -36,14 +36,14 @@ const Navigation = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Fetch user from localStorage on mount and when location changes
+    // Fetch user from sessionStorage on mount and when location changes
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = sessionStorage.getItem('user');
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error("Failed to parse user from localStorage");
+            } catch (error) {
+                console.error("Failed to parse user from sessionStorage");
             }
         } else {
             setUser(null);
@@ -192,8 +192,8 @@ const Navigation = () => {
                             </>
                         )}
 
-                        {/* Logged-in users: Reports (hidden for Admins) */}
-                        {user && user.role !== 'Admin' && (
+                        {/* Logged-in users: Reports (only for Residents) */}
+                        {user && user.role === 'Resident' && (
                             <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
                         )}
 
@@ -273,7 +273,7 @@ const Navigation = () => {
                                 {/* Logout Button */}
                                 <button
                                     onClick={() => {
-                                        localStorage.removeItem('user');
+                                        sessionStorage.removeItem('user');
                                         setUser(null);
                                         window.location.href = '/login';
                                     }}

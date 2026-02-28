@@ -14,7 +14,7 @@ const Settings = () => {
 
     // Check auth status on mount
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = sessionStorage.getItem('user');
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
@@ -75,10 +75,14 @@ const Settings = () => {
             if (response.ok) {
                 showAlert('Profile updated successfully!', 'success');
 
-                // Update local storage with new user data (e.g., in case name changed)
-                localStorage.setItem('user', JSON.stringify(data.user));
-                setUser(data.user);
+                alert('Settings updated successfully!');
 
+                // Update session storage
+                sessionStorage.setItem('user', JSON.stringify(data.user));
+                setUser(data.user); // Keep this line to update the component's state
+
+                // Optional: dispatch event to update global state if necessary
+                window.dispatchEvent(new Event('user-updated'));
                 // Clear password fields
                 setFormData(prev => ({
                     ...prev,

@@ -42,6 +42,27 @@ async function createTables() {
             );
         `);
         console.log('Users table initialized.');
+
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS Reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reportId TEXT UNIQUE NOT NULL,
+                userId INTEGER,
+                location TEXT NOT NULL,
+                description TEXT NOT NULL,
+                imageUrl TEXT,
+                status TEXT DEFAULT 'Pending',
+                date DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // Safely add userId column to existing Reports table if it doesn't exist
+        try {
+            await db.exec(`ALTER TABLE Reports ADD COLUMN userId INTEGER;`);
+        } catch (e) {
+            // Column already exists – this is expected on subsequent starts
+        }
+        console.log('Reports table initialized.');
     } catch (error) {
         console.error('Error creating tables:', error);
         throw error;

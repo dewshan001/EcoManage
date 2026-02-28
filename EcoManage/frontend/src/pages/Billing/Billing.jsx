@@ -24,7 +24,37 @@ const mockResidents = [
 ];
 
 const Billing = () => {
-    const [viewMode, setViewMode] = useState('resident'); // 'resident' or 'admin'
+    // Read user from sessionStorage to determine role
+    const getInitialViewMode = () => {
+        try {
+            const userStr = sessionStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const roleLower = user.role ? user.role.toLowerCase() : '';
+                if (roleLower === 'admin' || roleLower === 'manager' || roleLower === 'garbagemanager') {
+                    return 'admin';
+                }
+            }
+        } catch (error) {
+            console.error('Error reading user role from sessionStorage', error);
+        }
+        return 'resident';
+    };
+
+    const getCurrentResidentId = () => {
+        try {
+            const userStr = sessionStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                return user.id || user._id || 'R-001'; // Fallback if no ID found
+            }
+        } catch (error) {
+            console.error('Error reading user from sessionStorage', error);
+        }
+        return 'R-001';
+    };
+
+    const [viewMode, setViewMode] = useState(getInitialViewMode()); // 'resident' or 'admin' based on role
     const [invoices, setInvoices] = useState(initialInvoices);
     const [showGenerateForm, setShowGenerateForm] = useState(false);
 
@@ -32,8 +62,8 @@ const Billing = () => {
     const [selectedResident, setSelectedResident] = useState(mockResidents[0].id);
     const [selectedTaskType, setSelectedTaskType] = useState('General Waste');
 
-    // Currently logged-in resident mock (for resident view)
-    const currentResidentId = 'R-001';
+    // Currently logged-in resident
+    const currentResidentId = getCurrentResidentId();
 
     const handlePayNow = (id) => {
         setInvoices(invoices.map(inv =>
@@ -73,22 +103,6 @@ const Billing = () => {
                 <div className="billing-title">
                     <h1>Services Payment & Billings</h1>
                     <p>Manage your waste collection invoices and payments</p>
-                </div>
-
-                {/* View Toggle for Demo Purposes */}
-                <div className="view-toggle">
-                    <button
-                        className={`toggle-btn ${viewMode === 'resident' ? 'active' : ''}`}
-                        onClick={() => setViewMode('resident')}
-                    >
-                        Resident View
-                    </button>
-                    <button
-                        className={`toggle-btn ${viewMode === 'admin' ? 'active' : ''}`}
-                        onClick={() => setViewMode('admin')}
-                    >
-                        Admin View
-                    </button>
                 </div>
             </div>
 
