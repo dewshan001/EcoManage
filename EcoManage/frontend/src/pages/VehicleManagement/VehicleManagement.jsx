@@ -180,17 +180,7 @@ export default function VehicleManagement() {
             {/* ══════════ SIDEBAR ══════════ */}
             <aside className="vm-sidebar">
 
-                {/* Sidebar brand */}
-                <div className="sb-brand">
-                    <div className="sb-brand-icon">🌿</div>
-                    <div>
-                        <div className="sb-brand-name">EcoManage</div>
-                        <div className="sb-brand-sub">Fleet Control</div>
-                    </div>
-                </div>
 
-                {/* Divider */}
-                <div className="sb-divider" />
 
                 {/* Nav label */}
                 <div className="sb-nav-label">Navigation</div>

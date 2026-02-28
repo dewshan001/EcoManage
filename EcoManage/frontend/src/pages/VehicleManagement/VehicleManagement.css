@@ -1490,7 +1490,7 @@
     }
 
     .vm-root {
-        overflow-y: auto;
+        overflow-y: hidden;
         height: auto;
     }
 }
