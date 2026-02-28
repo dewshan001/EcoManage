@@ -21,12 +21,6 @@ const SEED_MAINTENANCE = [
     { id: 6, plate: 'NW-NAA-2345', service: 'Tank Sanitization', date: '2026-03-15', priority: 'Urgent', status: 'Overdue' },
 ];
 
-const TASKS = [
-    { id: 'T-001', zone: 'Zone 1 – Colombo Fort', type: 'General Collection', weight: '3–4 t', reqType: 'Compactor Truck' },
-    { id: 'T-002', zone: 'Zone 5 – Nugegoda', type: 'Green Waste', weight: '1–2 t', reqType: 'Mini Loader' },
-    { id: 'T-003', zone: 'Zone 9 – Dehiwala', type: 'Bulk Disposal', weight: '10+ t', reqType: 'Roll-Off Truck' },
-];
-
 const FUEL_ICON = { Diesel: '⛽', Electric: '⚡', CNG: '🔵' };
 const STATUS_META = {
     Available: { cls: 'pill-green', dot: 'dot-green' },
@@ -115,33 +109,33 @@ const AddVehicleModal = ({ onClose, onAdd }) => {
 };
 
 const AssignModal = ({ task, vehicles, onClose, onAssign }) => {
-    const eligible = vehicles.filter(v => v.status === 'Available' && v.type === task.reqType);
+    const eligible = vehicles.filter(v => v.status === 'Available' && v.type === task.vehicleType);
     const [sel, setSel] = useState(null);
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
                 <header className="modal-hdr">
                     <span className="modal-icon-wrap">🗺️</span>
-                    <div><h3>Assign Vehicle</h3><p>{task.id} · {task.zone}</p></div>
+                    <div><h3>Assign Vehicle</h3><p>{task.taskId} · {task.location || 'Unknown Location'}</p></div>
                     <button className="modal-x" onClick={onClose}>✕</button>
                 </header>
                 <div className="task-chips">
-                    <span className="task-chip">🚛 {task.reqType}</span>
-                    <span className="task-chip">⚖️ {task.weight}</span>
-                    <span className="task-chip">📦 {task.type}</span>
+                    <span className="task-chip">🚛 {task.vehicleType}</span>
+                    <span className="task-chip">⚖️ {task.workers} workers</span>
+                    <span className="task-chip">📦 Priority: {task.priority}</span>
                 </div>
                 {eligible.length === 0
-                    ? <p className="assign-empty">No available <strong>{task.reqType}</strong> right now.</p>
+                    ? <p className="assign-empty">No available <strong>{task.vehicleType}</strong> right now.</p>
                     : (<>
                         <p className="assign-pick">Select a vehicle to dispatch:</p>
                         <div className="assign-list">
                             {eligible.map(v => (
-                                <div key={v.id} className={`assign-row ${sel === v.id ? 'assign-row-sel' : ''}`} onClick={() => setSel(v.id)}>
+                                <div key={v.id || v.vehicleId} className={`assign-row ${sel === (v.id || v.vehicleId) ? 'assign-row-sel' : ''}`} onClick={() => setSel(v.id || v.vehicleId)}>
                                     <div className="assign-row-left">
-                                        <span className="ar-plate">{v.plate}</span>
-                                        <span className="ar-detail">{v.driver} · {v.capacity}t · {FUEL_ICON[v.fuel]} {v.fuel}</span>
+                                        <span className="ar-plate">{v.plateNumber || v.plate}</span>
+                                        <span className="ar-detail">{v.driver} · {v.capacity || 0}t · {v.fuel ? FUEL_ICON[v.fuel] : '⛽'} {v.fuel || 'Diesel'}</span>
                                     </div>
-                                    {sel === v.id && <span className="ar-check">✓</span>}
+                                    {sel === (v.id || v.vehicleId) && <span className="ar-check">✓</span>}
                                 </div>
                             ))}
                         </div>
@@ -190,6 +184,7 @@ const NAV = [
 export default function VehicleManagement() {
     const [view, setView] = useState('fleet');
     const [vehicles, setVehicles] = useState([]);
+    const [tasksList, setTasksList] = useState([]); // Real tasks
     const [filterStatus, setFilter] = useState('All');
     const [search, setSearch] = useState('');
     const [showAdd, setShowAdd] = useState(false);
@@ -205,8 +200,19 @@ export default function VehicleManagement() {
         }
     };
 
+    // Fetch tasks
+    const fetchTasks = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/tasks');
+            setTasksList(res.data);
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+        }
+    };
+
     useEffect(() => {
         fetchVehicles();
+        fetchTasks();
     }, []);
 
     const total = vehicles.length;
@@ -255,7 +261,16 @@ export default function VehicleManagement() {
         }
     };
 
-    const handleAssign = useCallback((vid, task) => setVehicles(p => p.map(v => v.id === vid ? { ...v, status: 'In Use', zone: task.zone } : v)), []);
+    const handleAssign = useCallback(async (vid, task) => {
+        try {
+            await axios.put(`http://localhost:5000/api/vehicles/${vid}`, { status: 'In Use', location: task.location });
+            await axios.put(`http://localhost:5000/api/tasks/${task.id || task.taskId}`, { status: 'Assigned', assignedTo: vid });
+            fetchVehicles();
+            fetchTasks();
+        } catch (error) {
+            console.error('Error assigning vehicle:', error);
+        }
+    }, []);
 
 
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
@@ -446,19 +461,19 @@ export default function VehicleManagement() {
                                     <div className="assign-col-hdr hdr-amber">
                                         <span className="assign-col-dot dot-amber" />
                                         <span>Pending Tasks</span>
-                                        <span className="assign-col-count">{TASKS.length}</span>
+                                        <span className="assign-col-count">{tasksList.filter(t => !t.assignedTo && t.status !== 'Completed').length}</span>
                                     </div>
                                     <div className="assign-col-body">
-                                        {TASKS.map(t => {
-                                            const can = vehicles.some(v => v.status === 'Available' && v.type === t.reqType);
+                                        {tasksList.filter(t => !t.assignedTo && t.status !== 'Completed').map(t => {
+                                            const can = vehicles.some(v => v.status === 'Available' && v.type === t.vehicleType);
                                             return (
-                                                <div key={t.id} className="task-card">
+                                                <div key={t.id || t.taskId} className="task-card">
                                                     <div className="tc-top">
-                                                        <span className="tc-id">{t.id}</span>
-                                                        <span className="tc-type">{t.type}</span>
+                                                        <span className="tc-id">{t.taskId}</span>
+                                                        <span className="tc-type">{t.priority}</span>
                                                     </div>
-                                                    <div className="tc-zone">📍 {t.zone}</div>
-                                                    <div className="tc-meta">🚛 {t.reqType} · ⚖️ {t.weight}</div>
+                                                    <div className="tc-zone">📍 {t.location || 'Unknown Location'}</div>
+                                                    <div className="tc-meta">🚛 {t.vehicleType} · ⚖️ {t.workers} workers</div>
                                                     <button
                                                         className={`tc-btn ${can ? 'tc-btn-enabled' : 'tc-btn-disabled'}`}
                                                         onClick={() => can && setAssign(t)}
@@ -480,15 +495,15 @@ export default function VehicleManagement() {
                                     </div>
                                     <div className="assign-col-body">
                                         {vehicles.filter(v => v.status === 'In Use').map(v => (
-                                            <div key={v.id} className="active-card">
+                                            <div key={v.id || v.vehicleId} className="active-card">
                                                 <div className="ac-top">
                                                     <span className="ac-pulse" />
-                                                    <span className="ac-plate">{v.plate}</span>
+                                                    <span className="ac-plate">{v.plateNumber || v.plate}</span>
                                                     <Pill status="In Use" />
                                                 </div>
                                                 <div className="ac-driver">👤 {v.driver}</div>
-                                                {v.zone && <div className="ac-zone">📍 {v.zone}</div>}
-                                                <div className="ac-type">{v.type} · {v.capacity}t</div>
+                                                {v.location && <div className="ac-zone">📍 {v.location}</div>}
+                                                <div className="ac-type">{v.type} · {v.capacity || 0}t</div>
                                             </div>
                                         ))}
                                         {inUse === 0 && <div className="col-empty">No active routes.</div>}

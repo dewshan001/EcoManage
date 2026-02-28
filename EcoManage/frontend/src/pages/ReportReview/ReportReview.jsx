@@ -95,6 +95,7 @@ const ReportReview = () => {
   const [activeMode, setActiveMode] = useState('review'); // 'review' | 'tasks' | 'dashboard'
   const [complaints, setComplaints] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -137,6 +138,12 @@ const ReportReview = () => {
       if (tasksRes.ok) {
         const tasksData = await tasksRes.json();
         setTasks(tasksData);
+      }
+
+      const vehRes = await fetch('http://localhost:5000/api/vehicles');
+      if (vehRes.ok) {
+        const vehData = await vehRes.json();
+        setVehicles(vehData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -600,14 +607,26 @@ const ReportReview = () => {
                                 </span>
                               </div>
                             </div>
-
-                            <button type="submit" className={`btn-submit ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
-                              {isSubmitting ? 'Processing...' : (
+                            
+                            {(() => {
+                              const hasAvailableVehicle = vehicles.some(v => v.status === 'Available' && v.type === taskForm.vehicleType);
+                              return (
                                 <>
-                                  <CheckCircleIcon /> Link & Create Task
+                                  {!hasAvailableVehicle && (
+                                    <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                      <AlertCircleIcon /> No available vehicle of this type. Task creation disabled.
+                                    </div>
+                                  )}
+                                  <button type="submit" className={`btn-submit ${isSubmitting || !hasAvailableVehicle ? 'loading' : ''}`} disabled={isSubmitting || !hasAvailableVehicle} style={{ opacity: (!hasAvailableVehicle && !isSubmitting) ? 0.6 : 1, cursor: (!hasAvailableVehicle && !isSubmitting) ? 'not-allowed' : 'pointer' }}>
+                                    {isSubmitting ? 'Processing...' : (
+                                      <>
+                                        <CheckCircleIcon /> Link & Create Task
+                                      </>
+                                    )}
+                                  </button>
                                 </>
-                              )}
-                            </button>
+                              );
+                            })()}
                           </>
                         )}
                       </form>
