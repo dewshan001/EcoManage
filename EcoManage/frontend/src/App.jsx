@@ -8,6 +8,7 @@ import About from './pages/About/About';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import VehicleManagement from './pages/VehicleManagement/VehicleManagement';
+import Reports from './pages/Reports/Reports';
 
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -115,6 +116,7 @@ const Navigation = () => {
                 {/* Centered Navigation Links */}
                 <div style={{ display: 'flex', gap: '32px', justifyContent: 'center' }}>
                     <Link to="/" style={linkStyle('/')}>Home</Link>
+                    <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
                     <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
                     <Link to="/schedule" style={linkStyle('/schedule')}>Schedule</Link>
                     <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
@@ -173,6 +175,7 @@ const LayoutWrapper = () => {
                 </style>
                 <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/reports" element={<Reports />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/schedule" element={<Schedule />} />
                     <Route path="/about" element={<About />} />
