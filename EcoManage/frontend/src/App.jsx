@@ -8,6 +8,7 @@ import About from './pages/About/About';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import VehicleManagement from './pages/VehicleManagement/VehicleManagement';
+import Workers from './pages/Workers/Workers';
 import Reports from './pages/Reports/Reports';
 import ReportReview from './pages/ReportReview/ReportReview';
 
@@ -36,9 +37,9 @@ const Navigation = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const isVehicles = location.pathname === '/vehicles';
+    const isDashboardLayout = location.pathname === '/vehicles' || location.pathname === '/workers';
 
-    const navClass = scrolled && !isVehicles ? 'glass-nav-active' : 'glass';
+    const navClass = scrolled && !isDashboardLayout ? 'glass-nav-active' : 'glass';
 
     const linkStyle = (path) => ({
         color: location.pathname === path ? 'var(--primary-color)' : 'var(--text-dark)',
@@ -50,17 +51,17 @@ const Navigation = () => {
     return (
         <nav className={navClass} style={{
             position: 'fixed',
-            top: isVehicles ? '0' : (visible ? '20px' : '-100px'),
+            top: isDashboardLayout ? '0' : (visible ? '20px' : '-100px'),
             left: '50%',
             transform: 'translateX(-50%)',
-            width: isVehicles ? '100%' : 'calc(100% - 40px)',
-            maxWidth: isVehicles ? 'none' : '1280px',
+            width: isDashboardLayout ? '100%' : 'calc(100% - 40px)',
+            maxWidth: isDashboardLayout ? 'none' : '1280px',
             zIndex: 1000,
-            padding: isVehicles ? '14px 40px' : (scrolled ? '12px 32px' : '20px 32px'),
-            borderRadius: isVehicles ? '0' : '24px',
-            background: isVehicles ? 'rgba(255, 255, 255, 0.95)' : undefined,
-            backdropFilter: isVehicles ? 'blur(10px)' : undefined,
-            borderBottom: isVehicles ? '1px solid rgba(0,0,0,0.08)' : 'none',
+            padding: isDashboardLayout ? '14px 40px' : (scrolled ? '12px 32px' : '20px 32px'),
+            borderRadius: isDashboardLayout ? '0' : '24px',
+            background: isDashboardLayout ? 'rgba(255, 255, 255, 0.95)' : undefined,
+            backdropFilter: isDashboardLayout ? 'blur(10px)' : undefined,
+            borderBottom: isDashboardLayout ? '1px solid rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
             {/* 
@@ -122,6 +123,7 @@ const Navigation = () => {
                     <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
                     <Link to="/schedule" style={linkStyle('/schedule')}>Schedule</Link>
                     <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
+                    <Link to="/workers" style={linkStyle('/workers')}>Workers</Link>
                     <Link to="/about" style={linkStyle('/about')}>About</Link>
                     <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
                 </div>
@@ -162,9 +164,9 @@ const LayoutWrapper = () => {
             {/* paddingTop ensures content isn't hidden under fixed nav */}
             <main style={{
                 flex: 1,
-                paddingTop: location.pathname === '/vehicles' ? '0' : '72px',
-                height: location.pathname === '/vehicles' ? '100vh' : 'auto',
-                overflow: location.pathname === '/vehicles' ? 'hidden' : 'visible',
+                paddingTop: (location.pathname === '/vehicles' || location.pathname === '/workers') ? '0' : '72px',
+                height: (location.pathname === '/vehicles' || location.pathname === '/workers') ? '100vh' : 'auto',
+                overflow: (location.pathname === '/vehicles' || location.pathname === '/workers') ? 'hidden' : 'visible',
                 msOverflowStyle: location.pathname === '/' ? 'none' : 'auto',
                 scrollbarWidth: location.pathname === '/' ? 'none' : 'auto'
             }}>
@@ -184,6 +186,7 @@ const LayoutWrapper = () => {
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/vehicles" element={<VehicleManagement />} />
+                    <Route path="/workers" element={<Workers />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                 </Routes>
