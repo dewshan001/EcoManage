@@ -11,6 +11,7 @@ import VehicleManagement from './pages/VehicleManagement/VehicleManagement';
 import Workers from './pages/Workers/Workers';
 import Reports from './pages/Reports/Reports';
 import ReportReview from './pages/ReportReview/ReportReview';
+import Billing from './pages/Billing/Billing';
 
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -124,6 +125,7 @@ const Navigation = () => {
                     <Link to="/schedule" style={linkStyle('/schedule')}>Schedule</Link>
                     <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
                     <Link to="/workers" style={linkStyle('/workers')}>Workers</Link>
+                    <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
                     <Link to="/about" style={linkStyle('/about')}>About</Link>
                     <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
                 </div>
@@ -187,6 +189,7 @@ const LayoutWrapper = () => {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/vehicles" element={<VehicleManagement />} />
                     <Route path="/workers" element={<Workers />} />
+                    <Route path="/billing" element={<Billing />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                 </Routes>
