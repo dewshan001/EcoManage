@@ -145,8 +145,6 @@ const Navigation = () => {
                         </>
                     )}
 
-                    <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
-                    <Link to="/schedule" style={linkStyle('/schedule')}>Schedule</Link>
                     <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
                     <Link to="/about" style={linkStyle('/about')}>About</Link>
                     <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
