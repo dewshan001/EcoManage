@@ -99,9 +99,11 @@ async function createTables() {
         // Safely add assignedTo column to Tasks if it doesn't exist
         try {
             await db.exec(`ALTER TABLE Tasks ADD COLUMN assignedTo TEXT;`);
-        } catch (e) {
-            // Column already exists
-        }
+        } catch (e) {}
+
+        try {
+            await db.exec(`ALTER TABLE Tasks ADD COLUMN assignedVehicle TEXT;`);
+        } catch (e) {}
 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS Vehicles (

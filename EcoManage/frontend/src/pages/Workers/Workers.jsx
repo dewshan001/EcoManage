@@ -62,9 +62,9 @@ const Workers = () => {
                     const tasksData = await tasksResponse.json();
                     
                     formattedTasks = tasksData.map(t => {
-                        // Keep 'Assigned' mapped to "Pending" for worker board view if it doesn't have worker assigned
+                        // Keep 'Pending Worker' mapped to "Pending" for worker board view if it doesn't have worker assigned
                         let status = t.status;
-                        if (status === 'Assigned' || status === 'Pending') {
+                        if (status === 'Pending Worker' || status === 'Pending') {
                             status = t.assignedTo ? 'Active' : 'Pending';
                         }
                         
@@ -76,6 +76,7 @@ const Workers = () => {
                             priority: t.priority,
                             status: status,
                             assignedTo: t.assignedTo || null,
+                            assignedVehicle: t.assignedVehicle || null, // Capture assigned vehicle
                             date: t.scheduleDate ? t.scheduleDate.split('T')[0] : 'TBD',
                             time: t.scheduleDate ? t.scheduleDate.split('T')[1]?.substring(0,5) : 'TBD'
                         };
@@ -327,6 +328,15 @@ const Workers = () => {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'Available' })
+                });
+            }
+
+            if (task.assignedVehicle) {
+                // Update backend Vehicle
+                await fetch(`http://localhost:5000/api/vehicles/${task.assignedVehicle}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'Available', location: '-' })
                 });
             }
 

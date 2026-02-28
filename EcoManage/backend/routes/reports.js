@@ -99,7 +99,7 @@ router.put('/:id', async (req, res) => {
                 // Try to insert a new task
                 await db.run(
                     'INSERT OR IGNORE INTO Tasks (taskId, reportId, priority, scheduleDate, workers, vehicleType, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [linkedTaskId, existingReport.reportId, priority || existingReport.priority, scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate, workers !== undefined ? workers : existingReport.workers, vehicleType !== undefined ? vehicleType : existingReport.vehicleType, 'Assigned']
+                    [linkedTaskId, existingReport.reportId, priority || existingReport.priority, scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate, workers !== undefined ? workers : existingReport.workers, vehicleType !== undefined ? vehicleType : existingReport.vehicleType, 'Pending Vehicle']
                 );
             } catch (err) {
                 console.error('Error syncing task from report update:', err);
@@ -110,6 +110,25 @@ router.put('/:id', async (req, res) => {
     } catch (error) {
         console.error('Error updating report:', error);
         res.status(500).json({ message: 'Server error while updating report' });
+    }
+});
+
+// DELETE a report
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const db = getDB();
+
+        const result = await db.run('DELETE FROM Reports WHERE id = ?', [id]);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ message: 'Report not found' });
+        }
+
+        res.json({ message: 'Report deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting report:', error);
+        res.status(500).json({ message: 'Server error while deleting report' });
     }
 });
 

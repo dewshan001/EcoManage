@@ -2,16 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import './VehicleManagement.css';
 
-/* ─── Seed Data ─── */
-const SEED_VEHICLES = [
-    { id: 1, plate: 'WP-CAA-1234', type: 'Compactor Truck', capacity: 8, fuel: 'Diesel', status: 'Available', driver: 'Kamal Perera', nextService: '2026-04-15', zone: null },
-    { id: 2, plate: 'WP-CAB-5678', type: 'Mini Loader', capacity: 2, fuel: 'Electric', status: 'In Use', driver: 'Sunil Gamage', nextService: '2026-05-01', zone: 'Zone 3 – Colombo West' },
-    { id: 3, plate: 'CP-KAA-9012', type: 'Roll-Off Truck', capacity: 12, fuel: 'Diesel', status: 'Maintenance', driver: 'Nimal Silva', nextService: '2026-05-20', zone: null },
-    { id: 4, plate: 'SP-GAA-3456', type: 'Flatbed Truck', capacity: 6, fuel: 'CNG', status: 'Available', driver: 'Ravi Fernando', nextService: '2026-04-28', zone: null },
-    { id: 5, plate: 'WP-CAC-7890', type: 'Compactor Truck', capacity: 8, fuel: 'Diesel', status: 'Available', driver: 'Chamara Dissanayake', nextService: '2026-04-10', zone: null },
-    { id: 6, plate: 'NW-NAA-2345', type: 'Water Tanker', capacity: 5, fuel: 'Diesel', status: 'In Use', driver: 'Priyanka Jayawardena', nextService: '2026-05-10', zone: 'Zone 7 – Street Cleaning' },
-];
-
+/* ─── Maintenance Seed Data (placeholder until maintenance API is implemented) ─── */
 const SEED_MAINTENANCE = [
     { id: 1, plate: 'WP-CAA-1234', service: 'Oil Change', date: '2026-04-15', priority: 'Normal', status: 'Scheduled' },
     { id: 2, plate: 'WP-CAB-5678', service: 'Brake Inspection', date: '2026-05-01', priority: 'Normal', status: 'Scheduled' },
@@ -47,7 +38,8 @@ const TrashIcon = () => (
 
 /* ── Modals ── */
 const AddVehicleModal = ({ onClose, onAdd }) => {
-    const [f, setF] = useState({ plate: '', type: 'Compactor Truck', capacity: '', fuel: 'Diesel', driver: '', vehicleId: '' });
+    const genId = () => `VEH-${Math.floor(1000 + Math.random() * 9000)}`;
+    const [f, setF] = useState({ plate: '', type: 'Compactor Truck', capacity: '', fuel: 'Diesel', driver: '', vehicleId: genId() });
     const ch = e => setF(p => ({ ...p, [e.target.name]: e.target.value }));
     const submit = e => {
         e.preventDefault();
@@ -65,7 +57,7 @@ const AddVehicleModal = ({ onClose, onAdd }) => {
                 <form className="modal-form" onSubmit={submit}>
                     <div className="mf-row">
                         <div className="mf-field"><label>Vehicle ID</label>
-                            <input name="vehicleId" placeholder="e.g. V-001" value={f.vehicleId} onChange={ch} required />
+                            <input name="vehicleId" value={f.vehicleId} readOnly style={{ background: 'var(--bg-lighter, #f3f4f6)', cursor: 'default', color: 'var(--primary-color, #16a34a)', fontWeight: '600' }} />
                         </div>
                         <div className="mf-field"><label>Plate Number</label>
                             <input name="plate" placeholder="e.g. WP-CAD-0001" value={f.plate} onChange={ch} required />
@@ -264,7 +256,7 @@ export default function VehicleManagement() {
     const handleAssign = useCallback(async (vid, task) => {
         try {
             await axios.put(`http://localhost:5000/api/vehicles/${vid}`, { status: 'In Use', location: task.location });
-            await axios.put(`http://localhost:5000/api/tasks/${task.id || task.taskId}`, { status: 'Assigned', assignedTo: vid });
+            await axios.put(`http://localhost:5000/api/tasks/${task.id || task.taskId}`, { status: 'Pending Worker', assignedVehicle: vid });
             fetchVehicles();
             fetchTasks();
         } catch (error) {
@@ -461,10 +453,10 @@ export default function VehicleManagement() {
                                     <div className="assign-col-hdr hdr-amber">
                                         <span className="assign-col-dot dot-amber" />
                                         <span>Pending Tasks</span>
-                                        <span className="assign-col-count">{tasksList.filter(t => !t.assignedTo && t.status !== 'Completed').length}</span>
+                                        <span className="assign-col-count">{tasksList.filter(t => !t.assignedVehicle && (t.status === 'Pending Vehicle' || t.status === 'Assigned' || t.status === 'Pending')).length}</span>
                                     </div>
                                     <div className="assign-col-body">
-                                        {tasksList.filter(t => !t.assignedTo && t.status !== 'Completed').map(t => {
+                                        {tasksList.filter(t => !t.assignedVehicle && (t.status === 'Pending Vehicle' || t.status === 'Assigned' || t.status === 'Pending')).map(t => {
                                             const can = vehicles.some(v => v.status === 'Available' && v.type === t.vehicleType);
                                             return (
                                                 <div key={t.id || t.taskId} className="task-card">

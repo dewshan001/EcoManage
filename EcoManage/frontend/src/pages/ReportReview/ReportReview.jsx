@@ -100,6 +100,7 @@ const ReportReview = () => {
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
 
   const [taskForm, setTaskForm] = useState({
     priority: 'Medium',
@@ -114,7 +115,11 @@ const ReportReview = () => {
     if (activeMode === 'review') {
       return complaints.filter((c) => ['Pending', 'In Review', 'Rejected'].includes(c.status));
     }
-    return complaints.filter((c) => c.status === 'Approved');
+    // For 'tasks' mode, only show approved complaints that don't have a linked task yet
+    return complaints.filter((c) => {
+      if (c.status !== 'Approved') return false;
+      return !c.linkedTaskId;
+    });
   };
 
   const modeComplaints = getModeFilteredComplaints();
@@ -155,6 +160,27 @@ const ReportReview = () => {
   useEffect(() => {
     fetchReports();
   }, []);
+
+  const handleDeleteTask = (id) => {
+    setTaskToDelete(id);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/tasks/${taskToDelete}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== taskToDelete && t.taskId !== taskToDelete));
+      } else {
+        alert('Failed to delete task');
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task');
+    } finally {
+      setTaskToDelete(null);
+    }
+  };
 
   // Auto-select first item when changing modes
   useEffect(() => {
@@ -713,8 +739,17 @@ const ReportReview = () => {
                       <div className="task-meta-item" style={{ color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <UsersIcon /> {task.assignedTo ? `Worker: ${task.assignedTo}` : 'Unassigned'}
                       </div>
-                      <div className="task-meta-item" style={{ color: 'var(--text-light)' }}>
-                        Linked: <strong>{task.reportId}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div className="task-meta-item" style={{ color: 'var(--text-light)' }}>
+                          Linked: <strong>{task.reportId}</strong>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          title="Delete Task"
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -732,6 +767,23 @@ const ReportReview = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Task Confirmation Modal */}
+      {taskToDelete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setTaskToDelete(null)}>
+          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '2rem', maxWidth: '400px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              <h3 style={{ margin: 0, color: '#dc2626' }}>Delete Task</h3>
+            </div>
+            <p style={{ margin: '0 0 1.5rem', color: 'var(--text-mid, #555)', fontSize: '0.95rem' }}>Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button onClick={() => setTaskToDelete(null)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color, #ddd)', background: 'transparent', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
+              <button onClick={confirmDeleteTask} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid #b91c1c', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: '500' }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -74,7 +74,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, priority, scheduleDate, workers, vehicleType, assignedTo } = req.body;
+        const { status, priority, scheduleDate, workers, vehicleType, assignedTo, assignedVehicle } = req.body;
         
         const db = getDB();
 
@@ -87,7 +87,7 @@ router.put('/:id', async (req, res) => {
 
         await db.run(
             `UPDATE Tasks 
-             SET status = ?, priority = ?, scheduleDate = ?, workers = ?, vehicleType = ?, assignedTo = ?, updatedAt = CURRENT_TIMESTAMP
+             SET status = ?, priority = ?, scheduleDate = ?, workers = ?, vehicleType = ?, assignedTo = ?, assignedVehicle = ?, updatedAt = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [
                 status || existingTask.status,
@@ -96,9 +96,22 @@ router.put('/:id', async (req, res) => {
                 workers !== undefined ? workers : existingTask.workers,
                 vehicleType !== undefined ? vehicleType : existingTask.vehicleType,
                 assignedTo !== undefined ? assignedTo : existingTask.assignedTo,
+                assignedVehicle !== undefined ? assignedVehicle : existingTask.assignedVehicle,
                 actualId
             ]
         );
+
+        // If task is marked Completed, update the linked report to Resolved
+        if (status === 'Completed' && existingTask.reportId) {
+            try {
+                await db.run(
+                    `UPDATE Reports SET status = 'Resolved' WHERE reportId = ?`,
+                    [existingTask.reportId]
+                );
+            } catch (err) {
+                console.error('Error updating linked report status:', err);
+            }
+        }
 
         res.json({ message: 'Task updated successfully', id: actualId });
     } catch (error) {
