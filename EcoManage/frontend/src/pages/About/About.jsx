@@ -254,54 +254,39 @@ const About = () => {
         </div>
       </section>
 
-      {/* Impact Section */}
-      <section className="about-impact">
-        <div className="impact-content animate-fade-in-up delay-150">
-          <span className="section-tag dark">REAL IMPACT</span>
-          <h2 className="impact-title">Making a Measurable Difference</h2>
-          <p className="impact-subtitle">
-            Our technology translates into tangible environmental and social outcomes
+      {/* Be Part of the Change Section */}
+      <section className="about-change">
+        <div className="change-header animate-fade-in-up delay-250">
+          <span className="section-tag dark">GET INVOLVED</span>
+          <h2 className="change-title">Be Part of the Change</h2>
+          <p className="change-subtitle">
+            Join thousands making a difference in their communities
           </p>
-
-          <div className="impact-metrics">
-            <div className="impact-metric">
-              <div className="impact-metric-icon">🚮</div>
-              <div className="impact-metric-value">92%</div>
-              <div className="impact-metric-label">Reduction in illegal dumping incidents</div>
-            </div>
-
-            <div className="impact-metric">
-              <div className="impact-metric-icon">⏱️</div>
-              <div className="impact-metric-value">48h</div>
-              <div className="impact-metric-label">Average complaint resolution time</div>
-            </div>
-
-            <div className="impact-metric">
-              <div className="impact-metric-icon">😊</div>
-              <div className="impact-metric-value">4.8/5</div>
-              <div className="impact-metric-label">Citizen satisfaction rating</div>
-            </div>
-
-            <div className="impact-metric">
-              <div className="impact-metric-icon">♻️</div>
-              <div className="impact-metric-value">35%</div>
-              <div className="impact-metric-label">Increase in recycling rates</div>
-            </div>
-          </div>
         </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="about-cta">
-        <div className="cta-card animate-fade-in-up delay-200">
-          <h2 className="cta-title">Join Us in Building a Cleaner Future</h2>
-          <p className="cta-description">
-            Whether you're a citizen wanting to report an issue, a municipality seeking modern
-            solutions, or a partner organization, we'd love to connect.
-          </p>
-          <div className="cta-buttons">
-            <button className="btn-cta-primary">Report an Issue</button>
-            <button className="btn-cta-secondary">Contact Us</button>
+        <div className="change-grid">
+          <div className="change-card animate-fade-in-up delay-300">
+            <div className="change-icon">👥</div>
+            <h3 className="change-card-title">Citizen Reporting</h3>
+            <p className="change-card-desc">
+              Report waste and environmental issues in your area and help your community stay clean
+            </p>
+          </div>
+
+          <div className="change-card animate-fade-in-up delay-350">
+            <div className="change-icon">🏛️</div>
+            <h3 className="change-card-title">For Municipalities</h3>
+            <p className="change-card-desc">
+              Adopt EcoManage to streamline operations, reduce costs, and improve citizen satisfaction
+            </p>
+          </div>
+
+          <div className="change-card animate-fade-in-up delay-400">
+            <div className="change-icon">🤝</div>
+            <h3 className="change-card-title">Partner With Us</h3>
+            <p className="change-card-desc">
+              Collaborate with EcoManage to amplify environmental impact across Sri Lanka
+            </p>
           </div>
         </div>
       </section>
