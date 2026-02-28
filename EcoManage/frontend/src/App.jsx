@@ -7,6 +7,7 @@ import Contact from './pages/Contact/Contact';
 import About from './pages/About/About';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
+import RegisterManager from './pages/RegisterManager/RegisterManager';
 import VehicleManagement from './pages/VehicleManagement/VehicleManagement';
 import Workers from './pages/Workers/Workers';
 import Reports from './pages/Reports/Reports';
@@ -91,7 +92,7 @@ const Navigation = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const isDashboardLayout = location.pathname === '/vehicles' || location.pathname === '/workers';
+    const isDashboardLayout = location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager';
 
     const navClass = scrolled && !isDashboardLayout ? 'glass-nav-active' : 'glass';
 
@@ -173,7 +174,11 @@ const Navigation = () => {
                     {/* Centered Navigation Links */}
                     <div style={{ display: 'flex', gap: '32px', justifyContent: 'center' }}>
                         <Link to="/" style={linkStyle('/')}>Home</Link>
-                        <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
+
+                        {/* Reports: hidden for Admins */}
+                        {(!user || user.role !== 'Admin') && (
+                            <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
+                        )}
 
                         {/* Admin-only links */}
                         {(!user || user.role !== 'Resident') && (
@@ -184,9 +189,19 @@ const Navigation = () => {
                             </>
                         )}
 
+                        {/* Admin-only: Managers page */}
+                        {user && user.role === 'Admin' && (
+                            <Link to="/register-manager" style={linkStyle('/register-manager')}>Managers</Link>
+                        )}
                         <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
-                        <Link to="/about" style={linkStyle('/about')}>About</Link>
-                        <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
+
+                        {/* About & Contact: hidden for Admins */}
+                        {(!user || user.role !== 'Admin') && (
+                            <>
+                                <Link to="/about" style={linkStyle('/about')}>About</Link>
+                                <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
+                            </>
+                        )}
                     </div>
 
                     {/* Right Aligned Login Button or User Profile */}
@@ -358,9 +373,9 @@ const LayoutWrapper = () => {
             {/* paddingTop ensures content isn't hidden under fixed nav */}
             <main style={{
                 flex: 1,
-                paddingTop: (location.pathname === '/vehicles' || location.pathname === '/workers') ? '0' : '72px',
-                height: (location.pathname === '/vehicles' || location.pathname === '/workers') ? '100vh' : 'auto',
-                overflow: (location.pathname === '/vehicles' || location.pathname === '/workers') ? 'hidden' : 'visible',
+                paddingTop: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? '0' : '72px',
+                height: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? '100vh' : 'auto',
+                overflow: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? 'hidden' : 'visible',
                 msOverflowStyle: location.pathname === '/' ? 'none' : 'auto',
                 scrollbarWidth: location.pathname === '/' ? 'none' : 'auto'
             }}>
@@ -383,6 +398,7 @@ const LayoutWrapper = () => {
                     <Route path="/workers" element={<Workers />} />
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/register-manager" element={<RegisterManager />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                 </Routes>

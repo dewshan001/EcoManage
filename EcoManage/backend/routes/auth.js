@@ -135,4 +135,86 @@ router.put('/settings', async (req, res) => {
     }
 });
 
+// Admin-only: Register a Garbage Manager
+router.post('/register-manager', async (req, res) => {
+    try {
+        const { fullName, email, password, contactNumber, address, registeredBy } = req.body;
+
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: 'Full name, email, and password are required.' });
+        }
+
+        const db = getDB();
+
+        // Verify the registering user is an Admin
+        const adminUser = await db.get('SELECT * FROM Users WHERE id = ?', [registeredBy]);
+        if (!adminUser || adminUser.role !== 'Admin') {
+            return res.status(403).json({ message: 'Only Admins can register Garbage Managers.' });
+        }
+
+        // Check if email already exists
+        const existingUser = await db.get('SELECT * FROM Users WHERE email = ?', [email]);
+        if (existingUser) {
+            return res.status(409).json({ message: 'A user with this email already exists.' });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        // Insert as GarbageManager
+        const result = await db.run(
+            `INSERT INTO Users (fullName, email, passwordHash, role, contactNumber, address) VALUES (?, ?, ?, 'GarbageManager', ?, ?)`,
+            [fullName, email, passwordHash, contactNumber || null, address || null]
+        );
+
+        res.status(201).json({
+            message: 'Garbage Manager registered successfully!',
+            user: {
+                id: result.lastID,
+                fullName,
+                email,
+                role: 'GarbageManager',
+                contactNumber,
+                address
+            }
+        });
+
+    } catch (error) {
+        console.error('Manager registration error:', error);
+        res.status(500).json({ message: 'Internal server error during manager registration.' });
+    }
+});
+
+// Get all Garbage Managers (Admin only)
+router.get('/managers', async (req, res) => {
+    try {
+        const db = getDB();
+        const managers = await db.all(
+            `SELECT id, fullName, email, role, contactNumber, address, createdAt FROM Users WHERE role = 'GarbageManager' ORDER BY createdAt DESC`
+        );
+        res.status(200).json({ managers });
+    } catch (error) {
+        console.error('Fetch managers error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Delete a Garbage Manager (Admin only)
+router.delete('/managers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const db = getDB();
+        const user = await db.get('SELECT * FROM Users WHERE id = ? AND role = ?', [id, 'GarbageManager']);
+        if (!user) {
+            return res.status(404).json({ message: 'Garbage Manager not found.' });
+        }
+        await db.run('DELETE FROM Users WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Manager removed successfully.' });
+    } catch (error) {
+        console.error('Delete manager error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
 module.exports = router;
