@@ -4,9 +4,41 @@
     min-height: 100vh;
     padding: 120px 24px 60px;
     position: relative;
-    background: linear-gradient(180deg, var(--bg-color) 0%, #f4fdf8 100%);
     overflow: hidden;
     font-family: var(--font-primary, system-ui, -apple-system, sans-serif);
+}
+
+/* Fixed background image layer - stays put while content scrolls */
+.reports-page-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Dark nature gradient overlay on top of photo */
+    background-color: rgba(20, 50, 30, 0.6);
+    z-index: -1;
+}
+
+/* Additional gradient tint over the photo for better readability */
+.reports-page-container::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg,
+            rgba(28, 50, 35, 0.70) 0%,
+            rgba(15, 30, 20, 0.55) 40%,
+            rgba(20, 60, 40, 0.50) 100%);
+    z-index: -1;
+    pointer-events: none;
 }
 
 /* Background Shapes for Glassmorphism Effect */
@@ -58,14 +90,15 @@
 .reports-title {
     font-size: 3rem;
     font-weight: 800;
-    color: var(--text-dark);
+    color: #ffffff;
     margin: 12px 0 16px;
     letter-spacing: -1px;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
 }
 
 .reports-subtitle {
     font-size: 1.15rem;
-    color: var(--text-light);
+    color: rgba(255, 255, 255, 0.82);
     max-width: 600px;
     margin: 0 auto;
     line-height: 1.6;
