@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
@@ -42,8 +43,11 @@ const Home = () => {
                             to maintain pristine environments.
                         </p>
                         <div className="hero-cta-group">
-                            <button className="btn-primary">Report an Issue</button>
-                            <button className="btn-secondary">Explore System →</button>
+                            <Link to="/register" className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block' }}>Report an Issue</Link>
+                            <button
+                                className="btn-secondary"
+                                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                            >Explore System →</button>
                         </div>
                         <div className="trust-row">
                             <span>✅ ISO 14001 Certified</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Home from './pages/Home/Home';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Schedule from './pages/Schedule/Schedule';
@@ -14,6 +14,15 @@ import Reports from './pages/Reports/Reports';
 import ReportReview from './pages/ReportReview/ReportReview';
 import Billing from './pages/Billing/Billing';
 import Settings from './pages/Settings/Settings';
+
+// Redirects guests (not logged in) to the login page
+const ProtectedRoute = ({ children }) => {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+};
 
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -175,13 +184,21 @@ const Navigation = () => {
                     <div style={{ display: 'flex', gap: '32px', justifyContent: 'center' }}>
                         <Link to="/" style={linkStyle('/')}>Home</Link>
 
-                        {/* Reports: hidden for Admins */}
-                        {(!user || user.role !== 'Admin') && (
+                        {/* Guest-only links (not logged in) */}
+                        {!user && (
+                            <>
+                                <Link to="/about" style={linkStyle('/about')}>About</Link>
+                                <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
+                            </>
+                        )}
+
+                        {/* Logged-in users: Reports (hidden for Admins) */}
+                        {user && user.role !== 'Admin' && (
                             <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
                         )}
 
-                        {/* Admin-only links */}
-                        {(!user || user.role !== 'Resident') && (
+                        {/* Admin / Manager links */}
+                        {user && user.role !== 'Resident' && (
                             <>
                                 <Link to="/report-review" style={linkStyle('/report-review')}>Review & Tasks</Link>
                                 <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
@@ -193,10 +210,14 @@ const Navigation = () => {
                         {user && user.role === 'Admin' && (
                             <Link to="/register-manager" style={linkStyle('/register-manager')}>Managers</Link>
                         )}
-                        <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
 
-                        {/* About & Contact: hidden for Admins */}
-                        {(!user || user.role !== 'Admin') && (
+                        {/* Billing: visible for logged-in users */}
+                        {user && (
+                            <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
+                        )}
+
+                        {/* About & Contact: visible for logged-in non-Admins */}
+                        {user && user.role !== 'Admin' && (
                             <>
                                 <Link to="/about" style={linkStyle('/about')}>About</Link>
                                 <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>
@@ -387,20 +408,23 @@ const LayoutWrapper = () => {
                         `}
                 </style>
                 <Routes>
+                    {/* Public routes — accessible by guests */}
                     <Route path="/" element={<Home />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/report-review" element={<ReportReview />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/schedule" element={<Schedule />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
-                    <Route path="/vehicles" element={<VehicleManagement />} />
-                    <Route path="/workers" element={<Workers />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/register-manager" element={<RegisterManager />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+
+                    {/* Protected routes — require login */}
+                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/report-review" element={<ProtectedRoute><ReportReview /></ProtectedRoute>} />
+                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+                    <Route path="/vehicles" element={<ProtectedRoute><VehicleManagement /></ProtectedRoute>} />
+                    <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
+                    <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/register-manager" element={<ProtectedRoute><RegisterManager /></ProtectedRoute>} />
                 </Routes>
             </main>
         </div>

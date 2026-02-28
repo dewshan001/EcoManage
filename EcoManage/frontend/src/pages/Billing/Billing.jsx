@@ -125,7 +125,7 @@ const Billing = () => {
             )}
 
             <div className="invoices-section">
-                <div className="section-header">
+                <div className="billing-section-header">
                     <h2>{viewMode === 'resident' ? 'My Invoices' : 'All Invoices'}</h2>
                     {viewMode === 'admin' && (
                         <button className="btn-primary" onClick={() => setShowGenerateForm(!showGenerateForm)}>
