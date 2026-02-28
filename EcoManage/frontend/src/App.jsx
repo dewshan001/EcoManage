@@ -149,25 +149,47 @@ const Navigation = () => {
     );
 };
 
+const LayoutWrapper = () => {
+    const location = useLocation();
+
+    return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Navigation />
+            {/* paddingTop ensures content isn't hidden under fixed nav */}
+            <main style={{
+                flex: 1,
+                paddingTop: location.pathname === '/vehicles' ? '0' : '72px',
+                height: location.pathname === '/vehicles' ? '100vh' : 'auto',
+                overflow: location.pathname === '/vehicles' ? 'hidden' : 'visible',
+                msOverflowStyle: location.pathname === '/' ? 'none' : 'auto',
+                scrollbarWidth: location.pathname === '/' ? 'none' : 'auto'
+            }}>
+                <style>
+                    {location.pathname === '/' && `
+                            main::-webkit-scrollbar {
+                                display: none;
+                            }
+                        `}
+                </style>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/schedule" element={<Schedule />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/vehicles" element={<VehicleManagement />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                </Routes>
+            </main>
+        </div>
+    );
+};
+
 function App() {
     return (
         <Router>
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Navigation />
-                {/* paddingTop ensures content isn't hidden under fixed nav */}
-                <main style={{ flex: 1, paddingTop: location.pathname === '/vehicles' ? '0' : '72px' }}>
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/schedule" element={<Schedule />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/vehicles" element={<VehicleManagement />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                    </Routes>
-                </main>
-            </div>
+            <LayoutWrapper />
         </Router>
     );
 }
