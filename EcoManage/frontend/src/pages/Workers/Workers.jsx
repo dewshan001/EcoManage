@@ -30,23 +30,27 @@ const TruckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
 );
 
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+);
+
 // --- Mock Data ---
 const initialWorkers = [
-    { id: 'W001', name: 'Kamal Perera', role: 'Driver', skill: 'Heavy Vehicle', status: 'Available', avatar: 'KP' },
-    { id: 'W002', name: 'Nimal Silva', role: 'Collector', skill: 'General Waste', status: 'On Duty', avatar: 'NS', taskId: 'T-1042' },
-    { id: 'W003', name: 'Sunil Fernando', role: 'Driver', skill: 'Compactor', status: 'Leave', avatar: 'SF' },
-    { id: 'W004', name: 'Chaminda Silva', role: 'Collector', skill: 'Recycling', status: 'Available', avatar: 'CS' },
-    { id: 'W005', name: 'Ajith Kumara', role: 'Supervisor', skill: 'Field Ops', status: 'Available', avatar: 'AK' },
-    { id: 'W006', name: 'Nuwan Pradeep', role: 'Collector', skill: 'Hazardous', status: 'On Duty', avatar: 'NP', taskId: 'T-1043' },
-    { id: 'W007', name: 'Ruwan Kumara', role: 'Driver', skill: 'Light Vehicle', status: 'Available', avatar: 'RK' },
+    { id: 'W001', name: 'Kamal Perera', role: 'Driver', skill: 'Heavy Vehicle', status: 'Available', avatar: 'KP', contact: '071-2345678', shift: 'Morning (06:00 - 14:00)', region: 'Colombo North' },
+    { id: 'W002', name: 'Nimal Silva', role: 'Collector', skill: 'General Waste', status: 'On Duty', avatar: 'NS', taskId: 'T-1042', contact: '077-1122334', shift: 'Morning (06:00 - 14:00)', region: 'Colombo South' },
+    { id: 'W003', name: 'Sunil Fernando', role: 'Driver', skill: 'Compactor', status: 'Leave', avatar: 'SF', contact: '072-9988776', shift: 'Evening (14:00 - 22:00)', region: 'Dehiwala' },
+    { id: 'W004', name: 'Chaminda Silva', role: 'Collector', skill: 'Recycling', status: 'Available', avatar: 'CS', contact: '075-5544332', shift: 'Night (22:00 - 06:00)', region: 'Colombo East' },
+    { id: 'W005', name: 'Ajith Kumara', role: 'Supervisor', skill: 'Field Ops', status: 'Available', avatar: 'AK', contact: '078-8877665', shift: 'Morning (06:00 - 14:00)', region: 'Colombo North' },
+    { id: 'W006', name: 'Nuwan Pradeep', role: 'Collector', skill: 'Hazardous', status: 'On Duty', avatar: 'NP', taskId: 'T-1043', contact: '071-1122334', shift: 'Evening (14:00 - 22:00)', region: 'Colombo West' },
+    { id: 'W007', name: 'Ruwan Kumara', role: 'Driver', skill: 'Light Vehicle', status: 'Available', avatar: 'RK', contact: '070-0099887', shift: 'Morning (06:00 - 14:00)', region: 'Mt Lavinia' },
 ];
 
 const initialTasks = [
-    { id: 'T-1042', location: 'Galle Road, Mount Lavinia', type: 'Routine Collection', priority: 'Medium', status: 'Active', assignedTo: 'W002' },
-    { id: 'T-1043', location: 'Park Avenue, Colombo 03', type: 'Hazardous Waste', priority: 'High', status: 'Active', assignedTo: 'W006' },
-    { id: 'T-1044', location: 'Main Market, Pettah', type: 'Bulk Clearance', priority: 'High', status: 'Pending', assignedTo: null },
-    { id: 'T-1045', location: 'Beach Road, Dehiwala', type: 'Routine Collection', priority: 'Low', status: 'Pending', assignedTo: null },
-    { id: 'T-1046', location: 'Lake Drive, Rajagiriya', type: 'Recycling', priority: 'Medium', status: 'Pending', assignedTo: null },
+    { id: 'T-1042', location: 'Galle Road, Mount Lavinia', type: 'Routine Collection', priority: 'Medium', status: 'Active', assignedTo: 'W002', date: '2023-10-25', time: '08:00 AM' },
+    { id: 'T-1043', location: 'Park Avenue, Colombo 03', type: 'Hazardous Waste', priority: 'High', status: 'Active', assignedTo: 'W006', date: '2023-10-25', time: '09:30 AM' },
+    { id: 'T-1044', location: 'Main Market, Pettah', type: 'Bulk Clearance', priority: 'High', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '11:00 AM' },
+    { id: 'T-1045', location: 'Beach Road, Dehiwala', type: 'Routine Collection', priority: 'Low', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '01:00 PM' },
+    { id: 'T-1046', location: 'Lake Drive, Rajagiriya', type: 'Recycling', priority: 'Medium', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '02:30 PM' },
 ];
 
 /* ─── Nav items ─── */
@@ -117,6 +121,27 @@ const Workers = () => {
         );
     };
 
+    const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+        if (!isOpen) return null;
+        return (
+            <div className="modal-backdrop" onClick={onCancel}>
+                <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                    <header className="modal-hdr" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+                        <span className="modal-icon-wrap" style={{ background: '#fef2f2', color: '#dc2626' }}>⚠️</span>
+                        <div><h3 style={{ color: '#dc2626' }}>{title}</h3></div>
+                    </header>
+                    <div className="modal-body" style={{ padding: '0 24px 24px', color: 'var(--text-mid)', fontSize: '0.95rem' }}>
+                        <p>{message}</p>
+                    </div>
+                    <footer className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+                        <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
+                        <button type="button" className="btn-solid" style={{ background: '#dc2626', borderColor: '#b91c1c' }} onClick={onConfirm}>Delete</button>
+                    </footer>
+                </div>
+            </div>
+        );
+    };
+
     // --- Derived State ---
     const activeNav = NAV.find(n => n.key === view);
 
@@ -168,6 +193,19 @@ const Workers = () => {
                 ? { ...w, status: 'Available', taskId: null }
                 : w
         ));
+    };
+
+    const [workerToDelete, setWorkerToDelete] = useState(null);
+
+    const handleDeleteWorker = (workerId) => {
+        setWorkerToDelete(workerId);
+    };
+
+    const confirmDeleteWorker = () => {
+        if (workerToDelete) {
+            setWorkers(prevWorkers => prevWorkers.filter(w => w.id !== workerToDelete));
+            setWorkerToDelete(null);
+        }
     };
 
     // --- Helpers ---
@@ -465,12 +503,188 @@ const Workers = () => {
                         </div>
                     )}
 
-                    {/* Placeholder for other views */}
-                    {view !== 'dashboard' && (
-                        <div className="wm-panel" style={{ height: '100%' }}>
-                            <div className="wm-empty-state" style={{ margin: 'auto' }}>
-                                <h3>{activeNav.label} View</h3>
-                                <p>This specific view module is not yet implemented in the prototype.</p>
+                    {/* ══ Staff Roster View ══ */}
+                    {view === 'roster' && (
+                        <div className="wm-panel animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <div className="wm-panel-header" style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <h2>Complete Staff Roster</h2>
+                                <div className="wm-controls" style={{ flexDirection: 'row' }}>
+                                    <div className="wm-search-bar">
+                                        <SearchIcon />
+                                        <input
+                                            type="text"
+                                            placeholder="Search roster..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="wm-filter-dropdown">
+                                        <FilterIcon />
+                                        <select
+                                            value={filterStatus}
+                                            onChange={(e) => setFilterStatus(e.target.value)}
+                                        >
+                                            <option value="All">All Status</option>
+                                            <option value="Available">Available</option>
+                                            <option value="On Duty">On Duty</option>
+                                            <option value="Leave">On Leave</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="wm-panel-content custom-scrollbar" style={{ padding: 0 }}>
+                                <table className="wm-roster-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Staff Member</th>
+                                            <th>ID & Role</th>
+                                            <th>Contact</th>
+                                            <th>Current Shift</th>
+                                            <th>Region</th>
+                                            <th>Status</th>
+                                            <th style={{ width: '50px' }}></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredWorkers.map(w => (
+                                            <tr key={w.id}>
+                                                <td>
+                                                    <div className="wm-table-worker">
+                                                        <div className="wm-worker-avatar" style={{ width: 32, height: 32, fontSize: '0.8rem' }}>{w.avatar}</div>
+                                                        <strong>{w.name}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="wm-table-cell-stack">
+                                                        <span>{w.id}</span>
+                                                        <span className="wm-task-type mini" style={{ width: 'fit-content' }}>{w.role}</span>
+                                                    </div>
+                                                </td>
+                                                <td>{w.contact}</td>
+                                                <td>{w.shift}</td>
+                                                <td>{w.region}</td>
+                                                <td>
+                                                    <span className={`wm-status-badge ${getStatusConfig(w.status)}`}>
+                                                        {w.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button className="wm-btn-delete" onClick={() => handleDeleteWorker(w.id)} title="Remove Staff">
+                                                        <TrashIcon />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {filteredWorkers.length === 0 && (
+                                    <div className="wm-empty-state" style={{ padding: '40px' }}>
+                                        <p>No workers matched your search.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══ Duty Mapping View ══ */}
+                    {view === 'assignments' && (
+                        <div className="wm-grid-layout" style={{ gridTemplateColumns: '1fr 380px' }}>
+                            {/* Map / Visual Board Area */}
+                            <div className="wm-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div className="wm-panel-header">
+                                    <h2>Interactive Duty Map</h2>
+                                </div>
+                                <div className="wm-panel-content" style={{ padding: 0, position: 'relative', display: 'flex', flex: 1, background: '#e5e7eb' }}>
+                                    <div className="wm-map-placeholder" style={{ height: '100%', width: '100%', borderBottom: 'none' }}>
+                                        <div className="wm-map-overlay" style={{ position: 'absolute', inset: 0, display: 'block' }}>
+                                            {/* Simulated Map Markers for Tasks */}
+                                            {tasks.map((t, i) => (
+                                                <div key={t.id} className="wm-map-marker" style={{ position: 'absolute', top: `${20 + (i * 15)}%`, left: `${10 + (i * 18)}%` }}>
+                                                    <div className={`wm-marker-pin ${t.status === 'Active' ? 'active' : 'pending'}`}>
+                                                        <MapPinIcon />
+                                                    </div>
+                                                    <div className="wm-marker-popup">
+                                                        <strong>{t.id}</strong>
+                                                        <span>{t.location}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Mission Control Sidebar */}
+                            <div className="wm-panel animate-fade-in wm-assignment-panel">
+                                <div className="wm-panel-header">
+                                    <h2>Mission Control</h2>
+                                    <span className="wm-badge-count">{tasks.length} Total</span>
+                                </div>
+                                <div className="wm-panel-content custom-scrollbar">
+                                    <div className="wm-task-list" style={{ gridTemplateColumns: '1fr' }}>
+                                        {tasks.map(task => {
+                                            const isAssigned = task.status === 'Active';
+                                            const worker = isAssigned ? workers.find(w => w.id === task.assignedTo) : null;
+                                            return (
+                                                <div key={task.id} className={`wm-task-card ${!isAssigned ? 'unassigned' : ''}`}>
+                                                    <div className="wm-task-header">
+                                                        <span className={`wm-priority-indicator ${getPriorityConfig(task.priority)}`}></span>
+                                                        <span className="wm-task-id">{task.id}</span>
+                                                        <span className="wm-task-type mini">{task.type}</span>
+                                                    </div>
+                                                    <div className="wm-task-body" style={{ marginTop: 8 }}>
+                                                        <div className="wm-task-location" style={{ fontSize: '0.9rem' }}>
+                                                            <MapPinIcon /> {task.location}
+                                                        </div>
+                                                        <div className="wm-task-time" style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: 4 }}>
+                                                            <ClockIcon /> {task.date} at {task.time}
+                                                        </div>
+                                                    </div>
+                                                    <div className="wm-task-footer" style={{ marginTop: 12, paddingTop: 12 }}>
+                                                        {isAssigned ? (
+                                                            <div className="wm-assigned-status" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <div className="wm-active-worker-info">
+                                                                    <span className="wm-mini-avatar">{worker?.avatar}</span>
+                                                                    <strong style={{ fontSize: '0.85rem' }}>{worker?.name}</strong>
+                                                                </div>
+                                                                <span className="wm-status-badge status-duty" style={{ whiteSpace: 'nowrap' }}>En Route</span>
+                                                            </div>
+                                                        ) : (
+                                                            assigningTask === task.id ? (
+                                                                <div className="wm-assign-dropdown-container">
+                                                                    <select
+                                                                        className="wm-assign-select"
+                                                                        onChange={(e) => handleAssignWorker(task.id, e.target.value)}
+                                                                        defaultValue=""
+                                                                    >
+                                                                        <option value="" disabled>Select available worker...</option>
+                                                                        {availableWorkers.length > 0 ? (
+                                                                            availableWorkers.map(aw => (
+                                                                                <option key={aw.id} value={aw.id}>
+                                                                                    {aw.name} ({aw.role})
+                                                                                </option>
+                                                                            ))
+                                                                        ) : (
+                                                                            <option value="" disabled>No workers available</option>
+                                                                        )}
+                                                                    </select>
+                                                                    <button className="wm-btn-cancel" onClick={() => setAssigningTask(null)}>X</button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    className="wm-btn-assign"
+                                                                    onClick={() => setAssigningTask(task.id)}
+                                                                >
+                                                                    <UserIcon /> Assign Worker
+                                                                </button>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -485,6 +699,14 @@ const Workers = () => {
                     onAdd={(newWorker) => setWorkers([...workers, newWorker])}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={!!workerToDelete}
+                title="Remove Staff"
+                message="Are you sure you want to remove this staff member from the roster? This action cannot be undone."
+                onConfirm={confirmDeleteWorker}
+                onCancel={() => setWorkerToDelete(null)}
+            />
         </div>
     );
 };

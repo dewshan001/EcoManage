@@ -46,6 +46,10 @@ const MSBadge = ({ s }) => {
     return <span className={`badge ${c[s] ?? 'ms-scheduled'}`}>{s}</span>;
 };
 
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+);
+
 /* ── Modals ── */
 const AddVehicleModal = ({ onClose, onAdd }) => {
     const [f, setF] = useState({ plate: '', type: 'Compactor Truck', capacity: '', fuel: 'Diesel', driver: '' });
@@ -139,6 +143,27 @@ const AssignModal = ({ task, vehicles, onClose, onAssign }) => {
     );
 };
 
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="modal-backdrop" onClick={onCancel}>
+            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                <header className="modal-hdr" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+                    <span className="modal-icon-wrap" style={{ background: '#fef2f2', color: '#dc2626' }}>⚠️</span>
+                    <div><h3 style={{ color: '#dc2626' }}>{title}</h3></div>
+                </header>
+                <div className="modal-body" style={{ padding: '0 24px 24px', color: 'var(--text-mid)', fontSize: '0.95rem' }}>
+                    <p>{message}</p>
+                </div>
+                <footer className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+                    <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
+                    <button type="button" className="btn-solid" style={{ background: '#dc2626', borderColor: '#b91c1c' }} onClick={onConfirm}>Delete</button>
+                </footer>
+            </div>
+        </div>
+    );
+};
+
 /* ─── Nav items ─── */
 const NAV = [
     { key: 'fleet', icon: '🚛', label: 'Fleet Profiles', desc: 'Manage vehicle registry' },
@@ -171,6 +196,18 @@ export default function VehicleManagement() {
     const handleAdd = useCallback(v => setVehicles(p => [...p, v]), []);
     const handleStatus = useCallback((id, s) => setVehicles(p => p.map(v => v.id === id ? { ...v, status: s, zone: s !== 'In Use' ? null : v.zone } : v)), []);
     const handleAssign = useCallback((vid, task) => setVehicles(p => p.map(v => v.id === vid ? { ...v, status: 'In Use', zone: task.zone } : v)), []);
+
+    const [vehicleToDelete, setVehicleToDelete] = useState(null);
+    const handleDelete = useCallback((id) => {
+        setVehicleToDelete(id);
+    }, []);
+
+    const confirmDelete = useCallback(() => {
+        if (vehicleToDelete) {
+            setVehicles(p => p.filter(v => v.id !== vehicleToDelete));
+            setVehicleToDelete(null);
+        }
+    }, [vehicleToDelete]);
 
     const activeNav = NAV.find(n => n.key === view);
 
@@ -285,6 +322,7 @@ export default function VehicleManagement() {
                                             <th>Status</th>
                                             <th>Next Service</th>
                                             <th>Update</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -312,10 +350,15 @@ export default function VehicleManagement() {
                                                         <option>Maintenance</option>
                                                     </select>
                                                 </td>
+                                                <td>
+                                                    <button className="vm-btn-delete" onClick={() => handleDelete(v.id)} title="Remove Vehicle">
+                                                        <TrashIcon />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                         {filtered.length === 0 && (
-                                            <tr><td colSpan="8" className="td-empty">No vehicles match your filter.</td></tr>
+                                            <tr><td colSpan="9" className="td-empty">No vehicles match your filter.</td></tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -490,6 +533,13 @@ export default function VehicleManagement() {
             {/* Modals */}
             {showAdd && <AddVehicleModal onClose={() => setShowAdd(false)} onAdd={handleAdd} />}
             {assignTask && <AssignModal task={assignTask} vehicles={vehicles} onClose={() => setAssign(null)} onAssign={handleAssign} />}
+            <ConfirmModal
+                isOpen={!!vehicleToDelete}
+                title="Remove Vehicle"
+                message="Are you sure you want to remove this vehicle from the fleet? This action cannot be undone."
+                onConfirm={confirmDelete}
+                onCancel={() => setVehicleToDelete(null)}
+            />
         </div>
     );
 }
