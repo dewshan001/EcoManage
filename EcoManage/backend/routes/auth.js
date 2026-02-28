@@ -89,4 +89,50 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// User Settings Update Route
+router.put('/settings', async (req, res) => {
+    try {
+        const { userId, fullName, password } = req.body;
+
+        if (!userId || !fullName) {
+            return res.status(400).json({ message: 'User ID and Full Name are required.' });
+        }
+
+        const db = getDB();
+
+        // Check if user exists
+        const user = await db.get('SELECT * FROM Users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        let query = 'UPDATE Users SET fullName = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?';
+        let params = [fullName, userId];
+
+        // If a new password is provided, hash it and include it in the update
+        if (password) {
+            const saltRounds = 10;
+            const passwordHash = await bcrypt.hash(password, saltRounds);
+            query = 'UPDATE Users SET fullName = ?, passwordHash = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?';
+            params = [fullName, passwordHash, userId];
+        }
+
+        await db.run(query, params);
+
+        res.status(200).json({
+            message: 'Profile updated successfully!',
+            user: {
+                id: user.id,
+                fullName: fullName,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error('Settings update error:', error);
+        res.status(500).json({ message: 'Internal server error during update.' });
+    }
+});
+
 module.exports = router;
