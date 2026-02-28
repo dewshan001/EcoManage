@@ -16,8 +16,23 @@ import Billing from './pages/Billing/Billing';
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
     const [visible, setVisible] = useState(true);
+    const [user, setUser] = useState(null);
     const lastScrollY = React.useRef(0);
     const location = useLocation();
+
+    // Fetch user from localStorage on mount and when location changes
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse user from localStorage");
+            }
+        } else {
+            setUser(null);
+        }
+    }, [location.pathname]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -120,11 +135,18 @@ const Navigation = () => {
                 <div style={{ display: 'flex', gap: '32px', justifyContent: 'center' }}>
                     <Link to="/" style={linkStyle('/')}>Home</Link>
                     <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
-                    <Link to="/report-review" style={linkStyle('/report-review')}>Review & Tasks</Link>
+
+                    {/* Admin-only links */}
+                    {(!user || user.role !== 'Resident') && (
+                        <>
+                            <Link to="/report-review" style={linkStyle('/report-review')}>Review & Tasks</Link>
+                            <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
+                            <Link to="/workers" style={linkStyle('/workers')}>Workers</Link>
+                        </>
+                    )}
+
                     <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
                     <Link to="/schedule" style={linkStyle('/schedule')}>Schedule</Link>
-                    <Link to="/vehicles" style={linkStyle('/vehicles')}>Vehicles</Link>
-                    <Link to="/workers" style={linkStyle('/workers')}>Workers</Link>
                     <Link to="/billing" style={linkStyle('/billing')}>Billing</Link>
                     <Link to="/about" style={linkStyle('/about')}>About</Link>
                     <Link to="/contact" style={linkStyle('/contact')}>Contact</Link>

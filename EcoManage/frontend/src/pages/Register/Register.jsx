@@ -9,7 +9,16 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+    const [alertConfig, setAlertConfig] = useState({ show: false, message: '', type: '' });
     const navigate = useNavigate();
+
+    const showAlert = (message, type = 'error') => {
+        setAlertConfig({ show: true, message, type });
+        // Auto-hide alert after 3 seconds
+        setTimeout(() => {
+            setAlertConfig({ show: false, message: '', type: '' });
+        }, 3000);
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -22,7 +31,7 @@ const Register = () => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
-            alert('Passwords do not match');
+            showAlert('Passwords do not match');
             return;
         }
 
@@ -42,14 +51,16 @@ const Register = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('Registration successful!');
-                navigate('/login');
+                showAlert('Registration successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    navigate('/login');
+                }, 1500);
             } else {
-                alert(data.message || 'Registration failed');
+                showAlert(data.message || 'Registration failed');
             }
         } catch (error) {
             console.error('Registration error:', error);
-            alert('Failed to connect to the server.');
+            showAlert('Failed to connect to the server.');
         }
     };
 
@@ -66,6 +77,12 @@ const Register = () => {
                         <h2>Join EcoManage</h2>
                         <p>Create an account to participate in community care.</p>
                     </div>
+
+                    {alertConfig.show && (
+                        <div className={`auth-alert auth-alert-${alertConfig.type}`}>
+                            {alertConfig.message}
+                        </div>
+                    )}
 
                     <form className="auth-form" onSubmit={handleSubmit}>
                         <div className="form-group">

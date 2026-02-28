@@ -7,7 +7,16 @@ const Login = () => {
         email: '',
         password: ''
     });
+    const [alertConfig, setAlertConfig] = useState({ show: false, message: '', type: '' });
     const navigate = useNavigate();
+
+    const showAlert = (message, type = 'error') => {
+        setAlertConfig({ show: true, message, type });
+        // Auto-hide alert after 3 seconds
+        setTimeout(() => {
+            setAlertConfig({ show: false, message: '', type: '' });
+        }, 3000);
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -34,19 +43,20 @@ const Login = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('Login successful!');
-                console.log('User data:', data.user);
+                showAlert('Login successful! Redirecting...', 'success');
 
-                // Usually here you would save a session token or user info to localStorage/Context
+                // Save user info to localStorage
                 localStorage.setItem('user', JSON.stringify(data.user));
 
-                navigate('/dashboard');
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 1000);
             } else {
-                alert(data.message || 'Login failed');
+                showAlert(data.message || 'Login failed');
             }
         } catch (error) {
             console.error('Login error:', error);
-            alert('Failed to connect to the server.');
+            showAlert('Failed to connect to the server.');
         }
     };
 
@@ -63,6 +73,12 @@ const Login = () => {
                         <h2>Welcome Back</h2>
                         <p>Sign in to continue nurturing our environment.</p>
                     </div>
+
+                    {alertConfig.show && (
+                        <div className={`auth-alert auth-alert-${alertConfig.type}`}>
+                            {alertConfig.message}
+                        </div>
+                    )}
 
                     <form className="auth-form" onSubmit={handleSubmit}>
                         <div className="form-group">
