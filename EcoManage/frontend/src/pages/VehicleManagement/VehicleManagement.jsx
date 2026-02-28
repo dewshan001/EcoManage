@@ -180,8 +180,17 @@ export default function VehicleManagement() {
             {/* ══════════ SIDEBAR ══════════ */}
             <aside className="vm-sidebar">
 
-                {/* Spacer to push nav items down slightly since brand is removed */}
-                <div style={{ height: '16px' }} />
+                {/* Sidebar brand */}
+                <div className="sb-brand">
+                    <div className="sb-brand-icon">🌿</div>
+                    <div>
+                        <div className="sb-brand-name">EcoManage</div>
+                        <div className="sb-brand-sub">Fleet Control</div>
+                    </div>
+                </div>
+
+                {/* Divider */}
+                <div className="sb-divider" />
 
                 {/* Nav label */}
                 <div className="sb-nav-label">Navigation</div>
