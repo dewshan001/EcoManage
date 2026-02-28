@@ -60,8 +60,16 @@ router.post('/login', async (req, res) => {
 
         const db = getDB();
 
-        // 1. Find the user
-        const user = await db.get('SELECT * FROM Users WHERE email = ?', [email]);
+        // 1. Find the user in Users table
+        let user = await db.get('SELECT * FROM Users WHERE email = ?', [email]);
+        let isWorker = false;
+
+        // 1b. If not found in Users, check Workers table
+        if (!user) {
+            user = await db.get('SELECT * FROM Workers WHERE email = ?', [email]);
+            isWorker = !!user;
+        }
+
         if (!user) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
@@ -77,9 +85,11 @@ router.post('/login', async (req, res) => {
             message: 'Login successful!',
             user: {
                 id: user.id,
-                fullName: user.fullName,
+                fullName: user.fullName || user.name, // users use fullName, some frontend parts might expect fullName or name
                 email: user.email,
-                role: user.role
+                role: isWorker ? 'Worker' : user.role, // Set role to Worker if found in Workers table
+                workerRole: isWorker ? user.role : undefined, // Keep specific worker role (e.g. Collector) available
+                skill: isWorker ? user.skill : undefined
             }
         });
 
@@ -213,6 +223,116 @@ router.delete('/managers/:id', async (req, res) => {
         res.status(200).json({ message: 'Manager removed successfully.' });
     } catch (error) {
         console.error('Delete manager error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin/Manager: Register a Worker
+router.post('/register-worker', async (req, res) => {
+    try {
+        const { fullName, email, password, workerRole, skill } = req.body;
+
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: 'Full name, email, and password are required.' });
+        }
+
+        const db = getDB();
+
+        // Check if email already exists in Users
+        const existingUser = await db.get('SELECT * FROM Users WHERE email = ?', [email]);
+        if (existingUser) {
+            return res.status(409).json({ message: 'A user with this email already exists.' });
+        }
+
+        // Check if email already exists in Workers
+        const existingWorker = await db.get('SELECT * FROM Workers WHERE email = ?', [email]);
+        if (existingWorker) {
+            return res.status(409).json({ message: 'A worker with this email already exists.' });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        const initialStatus = 'Available';
+
+        // Insert as Worker into the standalone Workers table
+        const result = await db.run(
+            `INSERT INTO Workers (fullName, email, passwordHash, role, skill, status) VALUES (?, ?, ?, ?, ?, ?)`,
+            [fullName, email, passwordHash, workerRole || null, skill || null, initialStatus]
+        );
+
+        res.status(201).json({
+            message: 'Worker registered successfully!',
+            user: {
+                id: `W${result.lastID.toString().padStart(3, '0')}`, // Send formatted ID
+                dbId: result.lastID, // Keep original DB ID if needed
+                name: fullName,
+                email,
+                role: workerRole,
+                skill,
+                status: initialStatus
+            }
+        });
+
+    } catch (error) {
+        console.error('Worker registration error:', error);
+        res.status(500).json({ message: 'Internal server error during worker registration.' });
+    }
+});
+
+// Admin/Manager: Get all Workers
+router.get('/workers', async (req, res) => {
+    try {
+        const db = getDB();
+        const workers = await db.all(
+            `SELECT id, fullName as name, email, role, skill, status FROM Workers ORDER BY createdAt DESC`
+        );
+        res.status(200).json({ workers });
+    } catch (error) {
+        console.error('Fetch workers error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin/Manager: Update Worker Status/Skill/Assignment
+router.put('/workers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, skill, role } = req.body;
+
+        const db = getDB();
+
+        const worker = await db.get('SELECT * FROM Workers WHERE id = ?', [id]);
+        if (!worker) {
+            return res.status(404).json({ message: 'Worker not found.' });
+        }
+
+        await db.run(
+            `UPDATE Workers SET status = ?, skill = ?, role = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            [status || worker.status, skill || worker.skill, role || worker.role, id]
+        );
+
+        res.status(200).json({ message: 'Worker updated successfully.' });
+    } catch (error) {
+        console.error('Update worker error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin/Manager: Delete a Worker
+router.delete('/workers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const db = getDB();
+        const worker = await db.get('SELECT * FROM Workers WHERE id = ?', [id]);
+        if (!worker) {
+            return res.status(404).json({ message: 'Worker not found.' });
+        }
+        await db.run('DELETE FROM Workers WHERE id = ?', [id]);
+        res.status(200).json({ message: 'Worker removed successfully.' });
+    } catch (error) {
+        console.error('Delete worker error:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
 });

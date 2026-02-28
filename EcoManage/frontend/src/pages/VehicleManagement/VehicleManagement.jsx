@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import './VehicleManagement.css';
 
 /* ─── Seed Data ─── */
@@ -52,11 +53,11 @@ const TrashIcon = () => (
 
 /* ── Modals ── */
 const AddVehicleModal = ({ onClose, onAdd }) => {
-    const [f, setF] = useState({ plate: '', type: 'Compactor Truck', capacity: '', fuel: 'Diesel', driver: '' });
+    const [f, setF] = useState({ plate: '', type: 'Compactor Truck', capacity: '', fuel: 'Diesel', driver: '', vehicleId: '' });
     const ch = e => setF(p => ({ ...p, [e.target.name]: e.target.value }));
     const submit = e => {
         e.preventDefault();
-        onAdd({ ...f, capacity: Number(f.capacity), id: Date.now(), status: 'Available', nextService: '', zone: null });
+        onAdd({ ...f, capacity: Number(f.capacity), condition: 'Good', status: 'Available', nextMaintenance: '', location: '-' });
         onClose();
     };
     return (
@@ -68,18 +69,30 @@ const AddVehicleModal = ({ onClose, onAdd }) => {
                     <button className="modal-x" onClick={onClose}>✕</button>
                 </header>
                 <form className="modal-form" onSubmit={submit}>
-                    <div className="mf-field"><label>Plate Number</label>
-                        <input name="plate" placeholder="e.g. WP-CAD-0001" value={f.plate} onChange={ch} required />
+                    <div className="mf-row">
+                        <div className="mf-field"><label>Vehicle ID</label>
+                            <input name="vehicleId" placeholder="e.g. V-001" value={f.vehicleId} onChange={ch} required />
+                        </div>
+                        <div className="mf-field"><label>Plate Number</label>
+                            <input name="plate" placeholder="e.g. WP-CAD-0001" value={f.plate} onChange={ch} required />
+                        </div>
                     </div>
                     <div className="mf-row">
                         <div className="mf-field"><label>Type</label>
                             <select name="type" value={f.type} onChange={ch}>
-                                {['Compactor Truck', 'Mini Loader', 'Roll-Off Truck', 'Flatbed Truck', 'Water Tanker'].map(t => <option key={t}>{t}</option>)}
+                                <option value="Compactor Truck">Compactor Truck</option>
+                                <option value="Mini Loader">Mini Loader</option>
+                                <option value="Roll-Off Truck">Roll-Off Truck</option>
+                                <option value="Flatbed Truck">Flatbed Truck</option>
+                                <option value="Water Tanker">Water Tanker</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
                         <div className="mf-field"><label>Fuel</label>
                             <select name="fuel" value={f.fuel} onChange={ch}>
-                                {['Diesel', 'Electric', 'CNG'].map(t => <option key={t}>{t}</option>)}
+                                <option value="Diesel">Diesel</option>
+                                <option value="Electric">Electric</option>
+                                <option value="CNG">CNG</option>
                             </select>
                         </div>
                     </div>
@@ -176,11 +189,25 @@ const NAV = [
 ═══════════════════════════════════ */
 export default function VehicleManagement() {
     const [view, setView] = useState('fleet');
-    const [vehicles, setVehicles] = useState(SEED_VEHICLES);
+    const [vehicles, setVehicles] = useState([]);
     const [filterStatus, setFilter] = useState('All');
     const [search, setSearch] = useState('');
     const [showAdd, setShowAdd] = useState(false);
     const [assignTask, setAssign] = useState(null);
+
+    // Fetch vehicles
+    const fetchVehicles = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/vehicles');
+            setVehicles(res.data);
+        } catch (error) {
+            console.error('Error fetching vehicles:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchVehicles();
+    }, []);
 
     const total = vehicles.length;
     const avail = vehicles.filter(v => v.status === 'Available').length;
@@ -190,24 +217,64 @@ export default function VehicleManagement() {
     const filtered = vehicles.filter(v => {
         const okS = filterStatus === 'All' || v.status === filterStatus;
         const q = search.toLowerCase();
-        return okS && (!q || v.plate.toLowerCase().includes(q) || v.type.toLowerCase().includes(q) || v.driver.toLowerCase().includes(q));
+        // Updated search filtering to match database keys
+        return okS && (!q || 
+            (v.plateNumber && v.plateNumber.toLowerCase().includes(q)) || 
+            (v.type && v.type.toLowerCase().includes(q)) || 
+            (v.driver && v.driver.toLowerCase().includes(q)) ||
+            (v.vehicleId && v.vehicleId.toLowerCase().includes(q)));
     });
 
-    const handleAdd = useCallback(v => setVehicles(p => [...p, v]), []);
-    const handleStatus = useCallback((id, s) => setVehicles(p => p.map(v => v.id === id ? { ...v, status: s, zone: s !== 'In Use' ? null : v.zone } : v)), []);
+    const handleAdd = async (newVehicleData) => {
+        try {
+            await axios.post('http://localhost:5000/api/vehicles', {
+                vehicleId: newVehicleData.vehicleId,
+                type: newVehicleData.type,
+                driver: newVehicleData.driver,
+                status: newVehicleData.status,
+                condition: newVehicleData.condition,
+                location: newVehicleData.location,
+                fuelLevel: 100, // Default to 100% full
+                lastMaintenance: new Date().toISOString().split('T')[0], // Today
+                nextMaintenance: newVehicleData.nextMaintenance || '',
+                plateNumber: newVehicleData.plate || newVehicleData.plateNumber
+            });
+            fetchVehicles();
+        } catch (error) {
+            console.error('Error adding vehicle:', error);
+            alert('Failed to add vehicle');
+        }
+    };
+
+    const handleStatus = async (id, s) => {
+        try {
+            await axios.put(`http://localhost:5000/api/vehicles/${id}`, { status: s });
+            fetchVehicles();
+        } catch (error) {
+            console.error('Error updating vehicle status:', error);
+        }
+    };
+
     const handleAssign = useCallback((vid, task) => setVehicles(p => p.map(v => v.id === vid ? { ...v, status: 'In Use', zone: task.zone } : v)), []);
+
 
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
     const handleDelete = useCallback((id) => {
         setVehicleToDelete(id);
     }, []);
 
-    const confirmDelete = useCallback(() => {
-        if (vehicleToDelete) {
-            setVehicles(p => p.filter(v => v.id !== vehicleToDelete));
+    const confirmDelete = async () => {
+        if (!vehicleToDelete) return;
+        try {
+            await axios.delete(`http://localhost:5000/api/vehicles/${vehicleToDelete}`);
+            fetchVehicles();
+        } catch (error) {
+            console.error('Error deleting vehicle:', error);
+            alert('Failed to delete vehicle');
+        } finally {
             setVehicleToDelete(null);
         }
-    }, [vehicleToDelete]);
+    };
 
     const activeNav = NAV.find(n => n.key === view);
 
@@ -314,11 +381,13 @@ export default function VehicleManagement() {
                                 <table className="data-table">
                                     <thead>
                                         <tr>
-                                            <th>Vehicle</th>
+                                            <th>Vehicle ID</th>
+                                            <th>Plate No</th>
                                             <th>Type</th>
-                                            <th>Cap.</th>
-                                            <th>Fuel</th>
                                             <th>Driver</th>
+                                            <th>Condition</th>
+                                            <th>Location</th>
+                                            <th>Fuel Level</th>
                                             <th>Status</th>
                                             <th>Next Service</th>
                                             <th>Update</th>
@@ -327,38 +396,39 @@ export default function VehicleManagement() {
                                     </thead>
                                     <tbody>
                                         {filtered.map(v => (
-                                            <tr key={v.id} className="data-row">
+                                            <tr key={v.vehicleId || v.id} className="data-row">
                                                 <td>
                                                     <div className="plate-cell">
                                                         <div className="plate-icon">🚛</div>
                                                         <div>
-                                                            <span className="plate-txt">{v.plate}</span>
-                                                            {v.zone && <span className="zone-txt">{v.zone}</span>}
+                                                            <span className="plate-txt">{v.vehicleId}</span>
                                                         </div>
                                                     </div>
                                                 </td>
+                                                <td className="td-mid">{v.plateNumber || v.plate}</td>
                                                 <td className="td-mid">{v.type}</td>
-                                                <td className="td-mid">{v.capacity}t</td>
-                                                <td className="td-mid">{FUEL_ICON[v.fuel]} {v.fuel}</td>
                                                 <td className="td-mid">{v.driver}</td>
+                                                <td className="td-mid">{v.condition || 'Good'}</td>
+                                                <td className="td-mid">{v.location || '-'}</td>
+                                                <td className="td-mid">{v.fuelLevel ? `${v.fuelLevel}%` : '100%'}</td>
                                                 <td><Pill status={v.status} /></td>
-                                                <td className="td-mid td-date">{v.nextService || '—'}</td>
+                                                <td className="td-mid td-date">{v.nextMaintenance || v.nextService || '—'}</td>
                                                 <td>
-                                                    <select className="status-sel" value={v.status} onChange={e => handleStatus(v.id, e.target.value)}>
+                                                    <select className="status-sel" value={v.status} onChange={e => handleStatus(v.vehicleId || v.id, e.target.value)}>
                                                         <option>Available</option>
                                                         <option>In Use</option>
                                                         <option>Maintenance</option>
                                                     </select>
                                                 </td>
                                                 <td>
-                                                    <button className="vm-btn-delete" onClick={() => handleDelete(v.id)} title="Remove Vehicle">
+                                                    <button className="vm-btn-delete" onClick={() => handleDelete(v.vehicleId || v.id)} title="Remove Vehicle">
                                                         <TrashIcon />
                                                     </button>
                                                 </td>
                                             </tr>
                                         ))}
                                         {filtered.length === 0 && (
-                                            <tr><td colSpan="9" className="td-empty">No vehicles match your filter.</td></tr>
+                                            <tr><td colSpan="11" className="td-empty">No vehicles match your filter.</td></tr>
                                         )}
                                     </tbody>
                                 </table>

@@ -35,6 +35,9 @@ async function createTables() {
                 email TEXT UNIQUE NOT NULL,
                 passwordHash TEXT NOT NULL,
                 role TEXT DEFAULT 'Resident',
+                workerRole TEXT,
+                workerSkill TEXT,
+                workerStatus TEXT,
                 contactNumber TEXT,
                 address TEXT,
                 createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -52,9 +55,72 @@ async function createTables() {
                 description TEXT NOT NULL,
                 imageUrl TEXT,
                 status TEXT DEFAULT 'Pending',
-                date DATETIME DEFAULT CURRENT_TIMESTAMP
+                date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                linkedTaskId TEXT,
+                priority TEXT,
+                scheduleDate TEXT,
+                workers INTEGER,
+                vehicleType TEXT,
+                decisionDate DATETIME
             );
         `);
+
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS Workers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fullName TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                passwordHash TEXT NOT NULL,
+                role TEXT,
+                skill TEXT,
+                status TEXT DEFAULT 'Available',
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('Workers table initialized.');
+
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS Tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                taskId TEXT UNIQUE NOT NULL,
+                reportId TEXT,
+                priority TEXT,
+                scheduleDate TEXT,
+                workers INTEGER,
+                vehicleType TEXT,
+                status TEXT DEFAULT 'Pending',
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('Tasks table initialized.');
+
+        // Safely add assignedTo column to Tasks if it doesn't exist
+        try {
+            await db.exec(`ALTER TABLE Tasks ADD COLUMN assignedTo TEXT;`);
+        } catch (e) {
+            // Column already exists
+        }
+
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS Vehicles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vehicleId TEXT UNIQUE NOT NULL,
+                type TEXT NOT NULL,
+                driver TEXT,
+                status TEXT DEFAULT 'Available',
+                condition TEXT DEFAULT 'Good',
+                location TEXT,
+                fuelLevel INTEGER DEFAULT 100,
+                lastMaintenance TEXT,
+                nextMaintenance TEXT,
+                plateNumber TEXT,
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log('Vehicles table initialized.');
 
         // Safely add userId column to existing Reports table if it doesn't exist
         try {
@@ -62,7 +128,28 @@ async function createTables() {
         } catch (e) {
             // Column already exists – this is expected on subsequent starts
         }
+
+        // Safely add task-related columns to existing Reports table if they don't exist
+        try {
+            await db.exec(`ALTER TABLE Reports ADD COLUMN linkedTaskId TEXT;`);
+            await db.exec(`ALTER TABLE Reports ADD COLUMN priority TEXT;`);
+            await db.exec(`ALTER TABLE Reports ADD COLUMN scheduleDate TEXT;`);
+            await db.exec(`ALTER TABLE Reports ADD COLUMN workers INTEGER;`);
+            await db.exec(`ALTER TABLE Reports ADD COLUMN vehicleType TEXT;`);
+            await db.exec(`ALTER TABLE Reports ADD COLUMN decisionDate DATETIME;`);
+        } catch (e) {
+            // Columns already exist
+        }
         console.log('Reports table initialized.');
+
+        // Safely add worker columns to existing Users table if they don't exist
+        try {
+            await db.exec(`ALTER TABLE Users ADD COLUMN workerRole TEXT;`);
+            await db.exec(`ALTER TABLE Users ADD COLUMN workerSkill TEXT;`);
+            await db.exec(`ALTER TABLE Users ADD COLUMN workerStatus TEXT;`);
+        } catch (e) {
+            // Columns already exist
+        }
     } catch (error) {
         console.error('Error creating tables:', error);
         throw error;

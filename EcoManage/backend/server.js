@@ -21,6 +21,14 @@ app.use('/api/auth', authRoutes);
 const reportRoutes = require('./routes/reports');
 app.use('/api/reports', reportRoutes);
 
+// Task Routes
+const taskRoutes = require('./routes/tasks');
+app.use('/api/tasks', taskRoutes);
+
+// Vehicle Routes
+const vehicleRoutes = require('./routes/vehicles');
+app.use('/api/vehicles', vehicleRoutes);
+
 // Initialize Database and Start Server
 initDB()
     .then(() => {

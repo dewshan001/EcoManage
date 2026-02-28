@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ReportReview.css';
 
 // SVG Icons
@@ -89,39 +89,16 @@ const PriorityBadge = ({ priority }) => (
 
 const VEHICLE_TYPES = ['Compactor Truck', 'Mini Loader', 'Roll-Off Truck', 'Flatbed Truck'];
 
-// Seed complaints to review (mock data for UI)
-const INITIAL_COMPLAINTS = [
-  {
-    id: 'C-10293',
-    reportId: 'REP-10293',
-    citizenName: 'Anonymous',
-    location: 'Main St & 4th Ave, Colombo 03',
-    description:
-      'Large pile of electronic waste dumped near the park entrance. Cables, screens and plastic parts scattered around.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=600&auto=format&fit=crop',
-    createdAt: '2026-02-27T10:30:00',
-    status: 'Pending',
-    linkedTaskId: null,
-  },
-  {
-    id: 'C-10291',
-    reportId: 'REP-10291',
-    citizenName: 'Anonymous',
-    location: 'Galle Road, Mount Lavinia',
-    description: 'Overflowing public bins by the bus stop. Waste spilling onto the pavement.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1605600659908-0ef719419d41?q=80&w=600&auto=format&fit=crop',
-    createdAt: '2026-02-25T14:15:00',
-    status: 'In Review',
-    linkedTaskId: 'T-0451',
-  },
-];
+// Remove mock data, we will fetch from backend
 
 const ReportReview = () => {
-  const [complaints, setComplaints] = useState(INITIAL_COMPLAINTS);
-  const [selectedId, setSelectedId] = useState(INITIAL_COMPLAINTS[0]?.id || null);
+  const [activeMode, setActiveMode] = useState('review'); // 'review' | 'tasks' | 'dashboard'
+  const [complaints, setComplaints] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [taskForm, setTaskForm] = useState({
     priority: 'Medium',
@@ -129,45 +106,131 @@ const ReportReview = () => {
     workers: 4,
     vehicleType: 'Compactor Truck',
     taskId: '',
-    decision: 'approve',
+    decision: 'approve', // Only used in 'review' mode
   });
 
-  const selectedComplaint = complaints.find((c) => c.id === selectedId) || complaints[0] || null;
+  const getModeFilteredComplaints = () => {
+    if (activeMode === 'review') {
+      return complaints.filter((c) => ['Pending', 'In Review', 'Rejected'].includes(c.status));
+    }
+    return complaints.filter((c) => c.status === 'Approved');
+  };
 
-  const filteredComplaints = complaints.filter((c) =>
+  const modeComplaints = getModeFilteredComplaints();
+
+  const selectedComplaint = modeComplaints.find((c) => c.id === selectedId) || modeComplaints[0] || null;
+
+  const filteredComplaints = modeComplaints.filter((c) =>
     filter === 'all' ? true : c.status === filter,
   );
+
+  const fetchReports = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('http://localhost:5000/api/reports');
+      if (res.ok) {
+        const data = await res.json();
+        setComplaints(data);
+      }
+      
+      const tasksRes = await fetch('http://localhost:5000/api/tasks');
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        setTasks(tasksData);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  // Auto-select first item when changing modes
+  useEffect(() => {
+    if (modeComplaints.length > 0) {
+      if (!modeComplaints.find(c => c.id === selectedId)) {
+        setSelectedId(modeComplaints[0].id);
+      }
+    } else {
+      setSelectedId(null);
+    }
+  }, [activeMode, complaints]);
 
   const handleTaskChange = (field, value) => {
     setTaskForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleApplyDecision = (e) => {
+  // Generate random task ID when entering task assignment mode
+  const generateTaskId = () => {
+    return `TASK-${Math.floor(1000 + Math.random() * 9000)}`;
+  };
+
+  const changeMode = (mode) => {
+    setActiveMode(mode);
+    setFilter('all');
+    
+    // Auto-generate task ID if switching to tasks mode and it's empty
+    if (mode === 'tasks' && !taskForm.taskId) {
+      setTaskForm(prev => ({ ...prev, taskId: generateTaskId() }));
+    }
+  };
+
+  const handleApplyDecision = async (e) => {
     e.preventDefault();
     if (!selectedComplaint) return;
 
+    setIsSubmitting(true);
+
     const { decision, taskId, priority, scheduleDate, workers, vehicleType } = taskForm;
+    let payload = {};
 
-    setComplaints((prev) =>
-      prev.map((c) => {
-        if (c.id !== selectedComplaint.id) return c;
+    if (activeMode === 'review') {
+      const nextStatus = decision === 'approve' ? 'Approved' : 'Rejected';
+      payload = { status: nextStatus };
+    } else {
+      // In Task Assignment Mode
+      payload = {
+        linkedTaskId: taskId || null,
+        priority: priority,
+        scheduleDate: scheduleDate,
+        workers: workers,
+        vehicleType: vehicleType
+      };
+    }
 
-        const nextStatus = decision === 'approve' ? 'Approved' : 'Rejected';
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/${selectedComplaint.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        return {
-          ...c,
-          status: nextStatus,
-          linkedTaskId: decision === 'approve' && taskId ? taskId : c.linkedTaskId,
-          lastDecision: {
-            decision,
-            priority,
-            scheduleDate,
-            workers,
-            vehicleType,
-          },
-        };
-      }),
-    );
+      if (res.ok) {
+        // Refresh local data
+        setComplaints((prev) =>
+          prev.map((c) =>
+            c.id === selectedComplaint.id
+              ? { ...c, ...payload }
+              : c
+          )
+        );
+
+        // Reset form for next decision and auto-generate new ID if in task mode
+        setTaskForm((prev) => ({ 
+          ...prev, 
+          taskId: activeMode === 'tasks' ? generateTaskId() : '', 
+          scheduleDate: '' 
+        }));
+      }
+    } catch (error) {
+      console.error('Error applying decision:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -193,318 +256,462 @@ const ReportReview = () => {
           <span className="section-tag dark">OFFICER CONSOLE</span>
           <h1 className="rr-title">Report Review & Task Creation</h1>
           <p className="rr-subtitle">
-            Verify submitted garbage complaints, approve or reject them based on evidence, and
-            instantly create structured cleanup tasks linked by Task IDs.
+            {activeMode === 'review'
+              ? 'Verify submitted garbage complaints and approve or reject them based on evidence.'
+              : activeMode === 'tasks'
+              ? 'Take approved complaints and instantly create structured cleanup tasks linked by Task IDs.'
+              : 'View the status of all assigned, ongoing, and completed tasks.'}
           </p>
         </header>
 
-        <div className="rr-main-card animate-fade-in-up delay-100">
-          <div className="rr-layout">
-            {/* Complaints Queue */}
-            <aside className="rr-sidebar">
-              <div className="rr-sidebar-header">
-                <div className="rr-sidebar-title-group">
-                  <h2 className="rr-sidebar-title">Complaints Queue</h2>
-                  <span className="rr-count-badge">{filteredComplaints.length}</span>
-                </div>
-                <p className="rr-sidebar-subtitle">Review and validate citizen reports</p>
-              </div>
+        {/* Global Mode Toggle */}
+        <div className="rr-mode-toggle">
+          <button
+            className={`mode-btn ${activeMode === 'review' ? 'active' : ''}`}
+            onClick={() => changeMode('review')}
+          >
+            Review Complaints
+          </button>
+          <button
+            className={`mode-btn ${activeMode === 'tasks' ? 'active' : ''}`}
+            onClick={() => changeMode('tasks')}
+          >
+            Assign Tasks
+          </button>
+          <button
+            className={`mode-btn ${activeMode === 'dashboard' ? 'active' : ''}`}
+            onClick={() => changeMode('dashboard')}
+          >
+            Task Board
+          </button>
+        </div>
 
-              <div className="rr-filter-bar">
-                <select
-                  className="rr-filter-select"
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="In Review">In Review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
+        {activeMode !== 'dashboard' ? (
+        <div className="rr-layout animate-fade-in-up delay-100">
+          {/* Complaints Queue Panel */}
+          <aside className="rr-sidebar-panel">
+            <div className="rr-sidebar-header">
+              <div className="rr-sidebar-title-group">
+                <h2 className="rr-sidebar-title">Complaints Queue</h2>
+                <span className="rr-count-badge">{filteredComplaints.length}</span>
               </div>
+              <p className="rr-sidebar-subtitle">Review and validate citizen reports</p>
+            </div>
 
-              <div className="rr-complaints-list">
-                {filteredComplaints.map((c) => (
-                  <div
-                    key={c.id}
-                    className={`complaint-card ${selectedComplaint?.id === c.id ? 'active' : ''}`}
-                    onClick={() => setSelectedId(c.id)}
+            {/* Modern Segmented Filter Bar */}
+            <div className="rr-filter-segments">
+              {activeMode === 'review' ? (
+                ['all', 'Pending', 'In Review', 'Rejected'].map((f) => (
+                  <button
+                    key={f}
+                    className={`filter-pill ${filter === f ? 'active' : ''}`}
+                    onClick={() => setFilter(f)}
                   >
-                    {c.imageUrl && (
-                      <div className="complaint-thumbnail">
-                        <img src={c.imageUrl} alt="Report" />
-                        <div className="thumbnail-overlay"></div>
-                      </div>
-                    )}
-                    <div className="complaint-content">
-                      <div className="complaint-header">
+                    {f === 'all' ? 'All Statuses' : f}
+                  </button>
+                ))
+              ) : (
+                ['all', 'Approved'].map((f) => (
+                  <button
+                    key={f}
+                    className={`filter-pill ${filter === f ? 'active' : ''}`}
+                    onClick={() => setFilter(f)}
+                  >
+                    {f === 'all' ? 'All Approved' : f}
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="rr-complaints-list">
+              {filteredComplaints.map((c) => (
+                <div
+                  key={c.id}
+                  className={`complaint-card ${selectedComplaint?.id === c.id ? 'active' : ''}`}
+                  onClick={() => setSelectedId(c.id)}
+                >
+                  {c.imageUrl && (
+                    <div className="complaint-thumbnail">
+                      <img src={c.imageUrl} alt="Report" />
+                      <div className="thumbnail-overlay"></div>
+                    </div>
+                  )}
+                  <div className="complaint-content">
+                    <div className="complaint-header">
+                      <div className="card-id-group">
+                        <span className={`status-dot ${c.status.toLowerCase().replace(' ', '-')}`} />
                         <span className="complaint-id">{c.reportId}</span>
-                        <StatusBadge status={c.status} />
                       </div>
-                      <h3 className="complaint-location">
-                        <MapPinIcon />
-                        {c.location}
-                      </h3>
-                      <p className="complaint-preview">{c.description}</p>
-                      <div className="complaint-meta">
-                        <span className="meta-item">
+                      <StatusBadge status={c.status} />
+                    </div>
+                    <h3 className="complaint-location">
+                      <MapPinIcon />
+                      {c.location}
+                    </h3>
+                    <p className="complaint-preview">{c.description}</p>
+                    <div className="complaint-meta">
+                      <span className="meta-item">
+                        <CalendarIcon />
+                        {formatDate(c.date || c.createdAt)}
+                      </span>
+                      {c.linkedTaskId && (
+                        <span className="meta-linked">→ {c.linkedTaskId}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {filteredComplaints.length === 0 && (
+                <div className="empty-state">
+                  <div className="empty-icon">🍃</div>
+                  <h3>No complaints found</h3>
+                  <p>Try adjusting your filters</p>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* Detail & Task Creation Panel */}
+          <section className="rr-content-panel">
+            {isLoading ? (
+              <div className="empty-selection">
+                <div className="loader-pulse"></div>
+                <p>Loading complaints...</p>
+              </div>
+            ) : selectedComplaint ? (
+              <>
+                <div className="rr-content-header">
+                  <div className="rr-content-title-group">
+                    <h2 className="rr-content-title">{selectedComplaint.location}</h2>
+                    <p className="rr-content-subtitle">
+                      Report ID: {selectedComplaint.reportId} • Citizen: {selectedComplaint.citizenName || 'Anonymous'}
+                    </p>
+                  </div>
+                  <div className="rr-status-group">
+                    <StatusBadge status={selectedComplaint.status} />
+                    {selectedComplaint.linkedTaskId && (
+                      <span className="linked-task-badge">
+                        Task: {selectedComplaint.linkedTaskId}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rr-content-grid">
+                  {/* Left: Description & Image */}
+                  <div className="rr-evidence-section">
+                    <div className="evidence-card">
+                      <div className="evidence-header">
+                        <h3>Description & Details</h3>
+                        <span className="evidence-date">
                           <CalendarIcon />
-                          {formatDate(c.createdAt)}
+                          {formatDate(selectedComplaint.date || selectedComplaint.createdAt)}
                         </span>
-                        {c.linkedTaskId && (
-                          <span className="meta-linked">→ {c.linkedTaskId}</span>
+                      </div>
+                      <p className="evidence-description">{selectedComplaint.description}</p>
+                    </div>
+
+                    <div className="evidence-card image-card">
+                      <h3>Photo Evidence</h3>
+                      {selectedComplaint.imageUrl ? (
+                        <div className="evidence-image-wrapper">
+                          <img
+                            src={selectedComplaint.imageUrl}
+                            alt="Complaint evidence"
+                            className="evidence-image"
+                          />
+                        </div>
+                      ) : (
+                        <div className="no-image-state">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                          <p>No image attached</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Task Creation OR Decision */}
+                  <div className="rr-task-section">
+                    <div className="task-creation-card">
+                      <div className="task-card-header">
+                        <h3>{activeMode === 'review' ? 'Report Decision' : 'Task Assignment'}</h3>
+                        <p>
+                          {activeMode === 'review'
+                            ? 'Review the evidence and decide the status of this complaint.'
+                            : 'Define cleanup task parameters and link to this approved complaint.'}
+                        </p>
+                      </div>
+
+                      <form className="task-form" onSubmit={handleApplyDecision}>
+
+                        {activeMode === 'review' ? (
+                          <>
+                            {/* Decision Toggle - Only in Review Mode */}
+                            <div className="form-group">
+                              <label className="form-label">Decision</label>
+                              <div className="decision-toggle-group">
+                                <button
+                                  type="button"
+                                  className={`decision-toggle approve ${taskForm.decision === 'approve' ? 'active' : ''}`}
+                                  onClick={() => handleTaskChange('decision', 'approve')}
+                                >
+                                  <CheckCircleIcon /> Approve Report
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`decision-toggle reject ${taskForm.decision === 'reject' ? 'active' : ''}`}
+                                  onClick={() => handleTaskChange('decision', 'reject')}
+                                >
+                                  <XCircleIcon /> Reject Report
+                                </button>
+                              </div>
+                            </div>
+
+                            <button type="submit" className={`btn-submit ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
+                              {isSubmitting ? 'Processing...' : taskForm.decision === 'approve' ? (
+                                <>
+                                  <CheckCircleIcon /> Confirm Approval
+                                </>
+                              ) : (
+                                <>
+                                  <XCircleIcon /> Confirm Rejection
+                                </>
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Task Form - Only in Tasks Mode */}
+                            <div className="form-group">
+                              <label className="form-label" htmlFor="taskId" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Task ID</span>
+                                <button 
+                                  type="button" 
+                                  onClick={() => setTaskForm(prev => ({ ...prev, taskId: generateTaskId() }))}
+                                  style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                >
+                                  ↻ Generate New
+                                </button>
+                              </label>
+                              <input
+                                type="text"
+                                id="taskId"
+                                className="form-input"
+                                placeholder="e.g., TASK-1234"
+                                value={taskForm.taskId}
+                                onChange={(e) => handleTaskChange('taskId', e.target.value)}
+                                required
+                              />
+                              <span className="form-hint">
+                                Unique identifier to link this task with the complaint
+                              </span>
+                            </div>
+
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label className="form-label" htmlFor="priority">
+                                  <AlertCircleIcon /> Priority Level
+                                </label>
+                                <select
+                                  id="priority"
+                                  className="form-input"
+                                  value={taskForm.priority}
+                                  onChange={(e) => handleTaskChange('priority', e.target.value)}
+                                >
+                                  <option>Low</option>
+                                  <option>Medium</option>
+                                  <option>High</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label" htmlFor="scheduleDate">
+                                  <CalendarIcon /> Schedule Date
+                                </label>
+                                <input
+                                  type="date"
+                                  id="scheduleDate"
+                                  className="form-input"
+                                  value={taskForm.scheduleDate}
+                                  onChange={(e) => handleTaskChange('scheduleDate', e.target.value)}
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label className="form-label" htmlFor="workers">
+                                  <UsersIcon /> Required Workers
+                                </label>
+                                <input
+                                  type="number"
+                                  id="workers"
+                                  min="1"
+                                  max="50"
+                                  className="form-input"
+                                  value={taskForm.workers}
+                                  onChange={(e) => handleTaskChange('workers', e.target.value)}
+                                  required
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label" htmlFor="vehicleType">
+                                  <TruckIcon /> Vehicle Type
+                                </label>
+                                <select
+                                  id="vehicleType"
+                                  className="form-input"
+                                  value={taskForm.vehicleType}
+                                  onChange={(e) => handleTaskChange('vehicleType', e.target.value)}
+                                >
+                                  {VEHICLE_TYPES.map((v) => (
+                                    <option key={v} value={v}>
+                                      {v}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="task-summary">
+                              <div className="summary-header">
+                                <span>Task Summary</span>
+                              </div>
+                              <div className="summary-tags">
+                                <PriorityBadge priority={taskForm.priority} />
+                                {taskForm.scheduleDate && (
+                                  <span className="summary-tag">
+                                    <CalendarIcon />
+                                    {taskForm.scheduleDate}
+                                  </span>
+                                )}
+                                <span className="summary-tag">
+                                  <UsersIcon />
+                                  {taskForm.workers} workers
+                                </span>
+                                <span className="summary-tag">
+                                  <TruckIcon />
+                                  {taskForm.vehicleType}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button type="submit" className={`btn-submit ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
+                              {isSubmitting ? 'Processing...' : (
+                                <>
+                                  <CheckCircleIcon /> Link & Create Task
+                                </>
+                              )}
+                            </button>
+                          </>
                         )}
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="empty-selection">
+                <div className="empty-selection-icon">🍃</div>
+                <h3>No complaint selected</h3>
+                <p>Select a complaint from the queue to review and create tasks</p>
+              </div>
+            )}
+          </section>
+        </div>
+        ) : (
+          <div className="rr-layout animate-fade-in-up delay-100" style={{ display: 'block' }}>
+            <div className="task-board">
+              <div className="task-board-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', color: 'var(--text-main)', margin: 0 }}>System Activity Log</h2>
+                <div className="rr-filter-segments" style={{ margin: 0 }}>
+                  {['all', 'Assigned', 'Active', 'Completed'].map((f) => (
+                    <button
+                      key={f}
+                      className={`filter-pill ${filter === f ? 'active' : ''}`}
+                      onClick={() => setFilter(f)}
+                      style={{ margin: 0 }}
+                    >
+                      {f === 'all' ? 'All Tasks' : f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="task-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {tasks
+                  .filter(t => filter === 'all' ? true : t.status === filter)
+                  .map(task => (
+                  <div key={task.id} className="task-card" style={{
+                    background: 'var(--card-bg)',
+                    borderRadius: '16px',
+                    padding: '1.5rem',
+                    boxShadow: 'var(--shadow-sm)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem'
+                  }}>
+                    <div className="task-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div className="task-id-badge" style={{
+                        background: 'var(--bg-lighter)',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        color: 'var(--primary-color)'
+                      }}>
+                        {task.taskId}
+                      </div>
+                      <StatusBadge status={task.status} />
+                    </div>
+
+                    <div className="task-details">
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{task.location || 'Unknown Location'}</h4>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {task.description || 'General maintenance task'}
+                      </p>
+                    </div>
+
+                    <div className="summary-tags" style={{ padding: '0.75rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+                      <PriorityBadge priority={task.priority} />
+                      {task.scheduleDate && (
+                        <span className="summary-tag"><CalendarIcon /> {task.scheduleDate.split('T')[0]}</span>
+                      )}
+                      <span className="summary-tag"><TruckIcon /> {task.vehicleType || 'Not specified'}</span>
+                    </div>
+
+                    <div className="task-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                      <div className="task-meta-item" style={{ color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <UsersIcon /> {task.assignedTo ? `Worker: ${task.assignedTo}` : 'Unassigned'}
+                      </div>
+                      <div className="task-meta-item" style={{ color: 'var(--text-light)' }}>
+                        Linked: <strong>{task.reportId}</strong>
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {filteredComplaints.length === 0 && (
-                  <div className="empty-state">
-                    <div className="empty-icon">🍃</div>
-                    <h3>No complaints found</h3>
-                    <p>Try adjusting your filters</p>
+                {tasks.length === 0 && (
+                  <div className="empty-selection" style={{ gridColumn: '1 / -1', padding: '4rem 2rem' }}>
+                    <div className="empty-selection-icon">📋</div>
+                    <h3>No tasks found</h3>
+                    <p>There are currently no tasks matching your filters.</p>
                   </div>
                 )}
               </div>
-            </aside>
-
-            {/* Detail & Task Creation */}
-            <section className="rr-content">
-              {selectedComplaint ? (
-                <>
-                  <div className="rr-content-header">
-                    <div className="rr-content-title-group">
-                      <h2 className="rr-content-title">{selectedComplaint.location}</h2>
-                      <p className="rr-content-subtitle">
-                        Report ID: {selectedComplaint.reportId} • Citizen: {selectedComplaint.citizenName}
-                      </p>
-                    </div>
-                    <div className="rr-status-group">
-                      <StatusBadge status={selectedComplaint.status} />
-                      {selectedComplaint.linkedTaskId && (
-                        <span className="linked-task-badge">
-                          Task: {selectedComplaint.linkedTaskId}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rr-content-grid">
-                    {/* Left: Description & Image */}
-                    <div className="rr-evidence-section">
-                      <div className="evidence-card">
-                        <div className="evidence-header">
-                          <h3>Description & Details</h3>
-                          <span className="evidence-date">
-                            <CalendarIcon />
-                            {formatDate(selectedComplaint.createdAt)}
-                          </span>
-                        </div>
-                        <p className="evidence-description">{selectedComplaint.description}</p>
-                      </div>
-
-                      <div className="evidence-card image-card">
-                        <h3>Photo Evidence</h3>
-                        {selectedComplaint.imageUrl ? (
-                          <div className="evidence-image-wrapper">
-                            <img
-                              src={selectedComplaint.imageUrl}
-                              alt="Complaint evidence"
-                              className="evidence-image"
-                            />
-                          </div>
-                        ) : (
-                          <div className="no-image-state">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            <p>No image attached</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: Task Creation */}
-                    <div className="rr-task-section">
-                      <div className="task-creation-card">
-                        <div className="task-card-header">
-                          <h3>Task Creation & Decision</h3>
-                          <p>Define cleanup task parameters and link to this complaint</p>
-                        </div>
-
-                        <form className="task-form" onSubmit={handleApplyDecision}>
-                          {/* Decision Toggle */}
-                          <div className="form-group">
-                            <label className="form-label">Decision</label>
-                            <div className="decision-toggle-group">
-                              <button
-                                type="button"
-                                className={`decision-toggle approve ${
-                                  taskForm.decision === 'approve' ? 'active' : ''
-                                }`}
-                                onClick={() => handleTaskChange('decision', 'approve')}
-                              >
-                                <CheckCircleIcon />
-                                Approve Report
-                              </button>
-                              <button
-                                type="button"
-                                className={`decision-toggle reject ${
-                                  taskForm.decision === 'reject' ? 'active' : ''
-                                }`}
-                                onClick={() => handleTaskChange('decision', 'reject')}
-                              >
-                                <XCircleIcon />
-                                Reject Report
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Task ID */}
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="taskId">
-                              Task ID
-                            </label>
-                            <input
-                              type="text"
-                              id="taskId"
-                              className="form-input"
-                              placeholder="e.g., T-0451"
-                              value={taskForm.taskId}
-                              onChange={(e) => handleTaskChange('taskId', e.target.value)}
-                            />
-                            <span className="form-hint">
-                              Unique identifier to link this task with the complaint
-                            </span>
-                          </div>
-
-                          {/* Priority & Schedule Date */}
-                          <div className="form-row">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="priority">
-                                <AlertCircleIcon />
-                                Priority Level
-                              </label>
-                              <select
-                                id="priority"
-                                className="form-input"
-                                value={taskForm.priority}
-                                onChange={(e) => handleTaskChange('priority', e.target.value)}
-                              >
-                                <option>Low</option>
-                                <option>Medium</option>
-                                <option>High</option>
-                              </select>
-                            </div>
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="scheduleDate">
-                                <CalendarIcon />
-                                Schedule Date
-                              </label>
-                              <input
-                                type="date"
-                                id="scheduleDate"
-                                className="form-input"
-                                value={taskForm.scheduleDate}
-                                onChange={(e) => handleTaskChange('scheduleDate', e.target.value)}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Workers & Vehicle Type */}
-                          <div className="form-row">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="workers">
-                                <UsersIcon />
-                                Required Workers
-                              </label>
-                              <input
-                                type="number"
-                                id="workers"
-                                min="1"
-                                max="50"
-                                className="form-input"
-                                value={taskForm.workers}
-                                onChange={(e) => handleTaskChange('workers', e.target.value)}
-                              />
-                            </div>
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="vehicleType">
-                                <TruckIcon />
-                                Vehicle Type
-                              </label>
-                              <select
-                                id="vehicleType"
-                                className="form-input"
-                                value={taskForm.vehicleType}
-                                onChange={(e) => handleTaskChange('vehicleType', e.target.value)}
-                              >
-                                {VEHICLE_TYPES.map((v) => (
-                                  <option key={v} value={v}>
-                                    {v}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-
-                          {/* Task Summary */}
-                          <div className="task-summary">
-                            <div className="summary-header">
-                              <span>Task Summary</span>
-                            </div>
-                            <div className="summary-tags">
-                              <PriorityBadge priority={taskForm.priority} />
-                              {taskForm.scheduleDate && (
-                                <span className="summary-tag">
-                                  <CalendarIcon />
-                                  {taskForm.scheduleDate}
-                                </span>
-                              )}
-                              <span className="summary-tag">
-                                <UsersIcon />
-                                {taskForm.workers} workers
-                              </span>
-                              <span className="summary-tag">
-                                <TruckIcon />
-                                {taskForm.vehicleType}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Submit Button */}
-                          <button type="submit" className="btn-submit">
-                            {taskForm.decision === 'approve' ? (
-                              <>
-                                <CheckCircleIcon />
-                                Approve & Create Task
-                              </>
-                            ) : (
-                              <>
-                                <XCircleIcon />
-                                Reject Complaint
-                              </>
-                            )}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="empty-selection">
-                  <div className="empty-selection-icon">🍃</div>
-                  <h3>No complaint selected</h3>
-                  <p>Select a complaint from the queue to review and create tasks</p>
-                </div>
-              )}
-            </section>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -40,18 +40,76 @@ router.get('/', async (req, res) => {
         const db = getDB();
 
         let reports;
+        const selectQuery = `
+            SELECT Reports.*, Users.fullName as citizenName 
+            FROM Reports 
+            LEFT JOIN Users ON Reports.userId = Users.id
+        `;
+
         if (userId) {
             // Filter reports by userId
-            reports = await db.all('SELECT * FROM Reports WHERE userId = ? ORDER BY date DESC', [userId]);
+            reports = await db.all(`${selectQuery} WHERE Reports.userId = ? ORDER BY Reports.date DESC`, [userId]);
         } else {
             // Get all reports (for admins)
-            reports = await db.all('SELECT * FROM Reports ORDER BY date DESC');
+            reports = await db.all(`${selectQuery} ORDER BY Reports.date DESC`);
         }
 
         res.json(reports);
     } catch (error) {
         console.error('Error fetching reports:', error);
         res.status(500).json({ message: 'Server error while fetching reports' });
+    }
+});
+
+// PUT update a report's status and task details
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, linkedTaskId, priority, scheduleDate, workers, vehicleType } = req.body;
+
+        const db = getDB();
+
+        // Check if report exists
+        const existingReport = await db.get('SELECT * FROM Reports WHERE id = ?', [id]);
+        if (!existingReport) {
+            return res.status(404).json({ message: 'Report not found' });
+        }
+
+        const decisionDate = new Date().toISOString();
+
+        await db.run(
+            `UPDATE Reports 
+             SET status = ?, linkedTaskId = ?, priority = ?, scheduleDate = ?, workers = ?, vehicleType = ?, decisionDate = ?
+             WHERE id = ?`,
+            [
+                status || existingReport.status,
+                linkedTaskId || existingReport.linkedTaskId,
+                priority || existingReport.priority,
+                scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate,
+                workers !== undefined ? workers : existingReport.workers,
+                vehicleType !== undefined ? vehicleType : existingReport.vehicleType,
+                decisionDate,
+                id
+            ]
+        );
+
+        // If a new task is linked, insert/update it in the Tasks table
+        if (linkedTaskId && linkedTaskId !== existingReport.linkedTaskId) {
+            try {
+                // Try to insert a new task
+                await db.run(
+                    'INSERT OR IGNORE INTO Tasks (taskId, reportId, priority, scheduleDate, workers, vehicleType, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [linkedTaskId, existingReport.reportId, priority || existingReport.priority, scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate, workers !== undefined ? workers : existingReport.workers, vehicleType !== undefined ? vehicleType : existingReport.vehicleType, 'Assigned']
+                );
+            } catch (err) {
+                console.error('Error syncing task from report update:', err);
+            }
+        }
+
+        res.json({ message: 'Report updated successfully', id });
+    } catch (error) {
+        console.error('Error updating report:', error);
+        res.status(500).json({ message: 'Server error while updating report' });
     }
 });
 

@@ -35,23 +35,7 @@ const TrashIcon = () => (
 );
 
 // --- Mock Data ---
-const initialWorkers = [
-    { id: 'W001', name: 'Kamal Perera', role: 'Driver', skill: 'Heavy Vehicle', status: 'Available', avatar: 'KP', contact: '071-2345678', shift: 'Morning (06:00 - 14:00)', region: 'Colombo North' },
-    { id: 'W002', name: 'Nimal Silva', role: 'Collector', skill: 'General Waste', status: 'On Duty', avatar: 'NS', taskId: 'T-1042', contact: '077-1122334', shift: 'Morning (06:00 - 14:00)', region: 'Colombo South' },
-    { id: 'W003', name: 'Sunil Fernando', role: 'Driver', skill: 'Compactor', status: 'Leave', avatar: 'SF', contact: '072-9988776', shift: 'Evening (14:00 - 22:00)', region: 'Dehiwala' },
-    { id: 'W004', name: 'Chaminda Silva', role: 'Collector', skill: 'Recycling', status: 'Available', avatar: 'CS', contact: '075-5544332', shift: 'Night (22:00 - 06:00)', region: 'Colombo East' },
-    { id: 'W005', name: 'Ajith Kumara', role: 'Supervisor', skill: 'Field Ops', status: 'Available', avatar: 'AK', contact: '078-8877665', shift: 'Morning (06:00 - 14:00)', region: 'Colombo North' },
-    { id: 'W006', name: 'Nuwan Pradeep', role: 'Collector', skill: 'Hazardous', status: 'On Duty', avatar: 'NP', taskId: 'T-1043', contact: '071-1122334', shift: 'Evening (14:00 - 22:00)', region: 'Colombo West' },
-    { id: 'W007', name: 'Ruwan Kumara', role: 'Driver', skill: 'Light Vehicle', status: 'Available', avatar: 'RK', contact: '070-0099887', shift: 'Morning (06:00 - 14:00)', region: 'Mt Lavinia' },
-];
-
-const initialTasks = [
-    { id: 'T-1042', location: 'Galle Road, Mount Lavinia', type: 'Routine Collection', priority: 'Medium', status: 'Active', assignedTo: 'W002', date: '2023-10-25', time: '08:00 AM' },
-    { id: 'T-1043', location: 'Park Avenue, Colombo 03', type: 'Hazardous Waste', priority: 'High', status: 'Active', assignedTo: 'W006', date: '2023-10-25', time: '09:30 AM' },
-    { id: 'T-1044', location: 'Main Market, Pettah', type: 'Bulk Clearance', priority: 'High', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '11:00 AM' },
-    { id: 'T-1045', location: 'Beach Road, Dehiwala', type: 'Routine Collection', priority: 'Low', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '01:00 PM' },
-    { id: 'T-1046', location: 'Lake Drive, Rajagiriya', type: 'Recycling', priority: 'Medium', status: 'Pending', assignedTo: null, date: '2023-10-25', time: '02:30 PM' },
-];
+// (Mock data removed as we fetch from backend)
 
 /* ─── Nav items ─── */
 const NAV = [
@@ -63,8 +47,77 @@ const NAV = [
 const Workers = () => {
     // Top-Level State
     const [view, setView] = useState('dashboard');
-    const [workers, setWorkers] = useState(initialWorkers);
-    const [tasks, setTasks] = useState(initialTasks);
+    const [workers, setWorkers] = useState([]);
+    const [tasks, setTasks] = useState([]);
+
+    // Fetch workers from backend when component mounts
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/workers');
+                // Fetch tasks from backend
+                let formattedTasks = [];
+                const tasksResponse = await fetch('http://localhost:5000/api/tasks');
+                if (tasksResponse.ok) {
+                    const tasksData = await tasksResponse.json();
+                    
+                    formattedTasks = tasksData.map(t => {
+                        // Keep 'Assigned' mapped to "Pending" for worker board view if it doesn't have worker assigned
+                        let status = t.status;
+                        if (status === 'Assigned' || status === 'Pending') {
+                            status = t.assignedTo ? 'Active' : 'Pending';
+                        }
+                        
+                        return {
+                            id: t.taskId,
+                            dbId: t.id,
+                            location: t.location || 'Unknown Location',
+                            type: t.description || 'General Task',
+                            priority: t.priority,
+                            status: status,
+                            assignedTo: t.assignedTo || null,
+                            date: t.scheduleDate ? t.scheduleDate.split('T')[0] : 'TBD',
+                            time: t.scheduleDate ? t.scheduleDate.split('T')[1]?.substring(0,5) : 'TBD'
+                        };
+                    });
+                    
+                    setTasks(formattedTasks);
+                }
+
+                // Match workers with their assigned task from tasks backend because worker backend doesn't store active tasks yet reliably
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Map the DB worker data to the format expected by the frontend
+                    const formattedWorkers = data.workers.map(w => {
+                        const formattedId = `W${w.id.toString().padStart(3, '0')}`;
+                        
+                        // Find if there's any active task assigned to this worker
+                        const activeTask = formattedTasks.find(t => t.assignedTo === formattedId && t.status === 'Active');
+
+                        return {
+                            dbId: w.id, // Keep the numeric DB ID
+                            id: formattedId, // Format the display ID
+                            name: w.name,
+                            role: w.role,
+                            skill: w.skill,
+                            status: w.status,
+                            avatar: w.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'W',
+                            taskId: activeTask ? activeTask.id : null
+                        };
+                    });
+
+                    setWorkers(formattedWorkers);
+                } else {
+                    console.error('Failed to fetch workers:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     // UI Modals
     const [showAddWorker, setShowAddWorker] = useState(false);
@@ -78,14 +131,57 @@ const Workers = () => {
 
     // --- Modals ---
     const AddWorkerModal = ({ onClose, onAdd }) => {
-        const [f, setF] = useState({ name: '', role: 'Collector', skill: 'General Waste' });
+        const [f, setF] = useState({ name: '', email: '', password: '', role: 'Collector', skill: 'General Waste' });
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState('');
+
         const ch = e => setF(p => ({ ...p, [e.target.name]: e.target.value }));
-        const submit = e => {
+        const submit = async e => {
             e.preventDefault();
-            const newId = `W${Math.floor(100 + Math.random() * 900)}`;
-            const initials = f.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'W';
-            onAdd({ ...f, id: newId, status: 'Available', avatar: initials });
-            onClose();
+            setLoading(true);
+            setError('');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register-worker', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullName: f.name,
+                        email: f.email,
+                        password: f.password,
+                        workerRole: f.role,
+                        skill: f.skill
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to register worker');
+                }
+
+                // Add to local state (using standard initials for avatar)
+                const initials = f.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'W';
+                onAdd({
+                    dbId: data.user.dbId,
+                    id: data.user.id,
+                    name: f.name,
+                    email: f.email,
+                    status: data.user.status,
+                    avatar: initials,
+                    role: data.user.role, // ensure mapping is correct 
+                    skill: data.user.skill,
+                    contact: 'N/A',
+                    shift: 'N/A',
+                    region: 'N/A'
+                });
+                onClose();
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
         };
         return (
             <div className="modal-backdrop" onClick={onClose}>
@@ -93,11 +189,18 @@ const Workers = () => {
                     <header className="modal-hdr">
                         <span className="modal-icon-wrap">👷‍♂️</span>
                         <div><h3>Register Worker</h3><p>Add a new staff member to the roster</p></div>
-                        <button className="modal-x" onClick={onClose}>✕</button>
+                        <button className="modal-x" onClick={onClose} disabled={loading}>✕</button>
                     </header>
                     <form className="modal-form" onSubmit={submit}>
+                        {error && <div style={{ color: 'red', margin: '10px 0', padding: '10px', backgroundColor: '#fee2e2', borderRadius: '4px' }}>{error}</div>}
                         <div className="mf-field"><label>Full Name</label>
                             <input name="name" placeholder="e.g. Saman Kumara" value={f.name} onChange={ch} required />
+                        </div>
+                        <div className="mf-field"><label>Email Address</label>
+                            <input type="email" name="email" placeholder="worker@ecomanage.com" value={f.email} onChange={ch} required />
+                        </div>
+                        <div className="mf-field"><label>Password</label>
+                            <input type="password" name="password" placeholder="Create a strong password" value={f.password} onChange={ch} required minLength="6" />
                         </div>
                         <div className="mf-row">
                             <div className="mf-field"><label>Role</label>
@@ -112,8 +215,8 @@ const Workers = () => {
                             </div>
                         </div>
                         <footer className="modal-footer">
-                            <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-                            <button type="submit" className="btn-solid">Register</button>
+                            <button type="button" className="btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
+                            <button type="submit" className="btn-solid" disabled={loading}>{loading ? 'Registering...' : 'Register'}</button>
                         </footer>
                     </form>
                 </div>
@@ -162,37 +265,83 @@ const Workers = () => {
     const onLeaveCount = workers.filter(w => w.status === 'Leave').length;
 
     // --- Handlers ---
-    const handleAssignWorker = (taskId, workerId) => {
-        // Update Task
-        setTasks(prevTasks => prevTasks.map(t =>
-            t.id === taskId
-                ? { ...t, status: 'Active', assignedTo: workerId }
-                : t
-        ));
+    const handleAssignWorker = async (taskId, workerId) => {
+        // Find task and worker details
+        const task = tasks.find(t => t.id === taskId);
+        const worker = workers.find(w => w.id === workerId);
+        
+        if (!task || !worker) return;
 
-        // Update Worker
-        setWorkers(prevWorkers => prevWorkers.map(w =>
-            w.id === workerId
-                ? { ...w, status: 'On Duty', taskId: taskId }
-                : w
-        ));
+        try {
+            // Update backend Task
+            await fetch(`http://localhost:5000/api/tasks/${task.dbId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Active', assignedTo: workerId })
+            });
+
+            // Update backend Worker
+            await fetch(`http://localhost:5000/api/auth/workers/${worker.dbId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'On Duty' })
+            });
+
+            // Update Task State
+            setTasks(prevTasks => prevTasks.map(t =>
+                t.id === taskId
+                    ? { ...t, status: 'Active', assignedTo: workerId }
+                    : t
+            ));
+
+            // Update Worker State
+            setWorkers(prevWorkers => prevWorkers.map(w =>
+                w.id === workerId
+                    ? { ...w, status: 'On Duty', taskId: taskId }
+                    : w
+            ));
+        } catch (error) {
+            console.error('Error assigning worker:', error);
+        }
 
         setAssigningTask(null); // Close dropdown
     };
 
-    const handleCompleteTask = (taskId) => {
+    const handleCompleteTask = async (taskId) => {
         const task = tasks.find(t => t.id === taskId);
         if (!task || !task.assignedTo) return;
+        
+        const worker = workers.find(w => w.id === task.assignedTo);
 
-        // Remove task from active list
-        setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
+        try {
+            // Update backend Task
+            await fetch(`http://localhost:5000/api/tasks/${task.dbId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Completed' })
+            });
 
-        // Free up worker
-        setWorkers(prevWorkers => prevWorkers.map(w =>
-            w.id === task.assignedTo
-                ? { ...w, status: 'Available', taskId: null }
-                : w
-        ));
+            if (worker) {
+                // Update backend Worker
+                await fetch(`http://localhost:5000/api/auth/workers/${worker.dbId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'Available' })
+                });
+            }
+
+            // Remove task from active list by changing its status to Completed
+            setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
+
+            // Free up worker
+            setWorkers(prevWorkers => prevWorkers.map(w =>
+                w.id === task.assignedTo
+                    ? { ...w, status: 'Available', taskId: null }
+                    : w
+            ));
+        } catch (error) {
+            console.error('Error completing task:', error);
+        }
     };
 
     const [workerToDelete, setWorkerToDelete] = useState(null);
@@ -201,10 +350,27 @@ const Workers = () => {
         setWorkerToDelete(workerId);
     };
 
-    const confirmDeleteWorker = () => {
+    const confirmDeleteWorker = async () => {
         if (workerToDelete) {
-            setWorkers(prevWorkers => prevWorkers.filter(w => w.id !== workerToDelete));
-            setWorkerToDelete(null);
+            try {
+                // Find worker by formatted ID to get the dbId
+                const worker = workers.find(w => w.id === workerToDelete);
+                if (worker) {
+                    const response = await fetch(`http://localhost:5000/api/auth/workers/${worker.dbId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        setWorkers(prevWorkers => prevWorkers.filter(w => w.id !== workerToDelete));
+                    } else {
+                        console.error('Failed to delete worker');
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting worker:', error);
+            } finally {
+                setWorkerToDelete(null);
+            }
         }
     };
 
@@ -538,9 +704,9 @@ const Workers = () => {
                                         <tr>
                                             <th>Staff Member</th>
                                             <th>ID & Role</th>
-                                            <th>Contact</th>
-                                            <th>Current Shift</th>
-                                            <th>Region</th>
+                                            <th>Skill / Specialty</th>
+                                            <th>Current Task</th>
+                                            <th>Task Details</th>
                                             <th>Status</th>
                                             <th style={{ width: '50px' }}></th>
                                         </tr>
@@ -560,9 +726,27 @@ const Workers = () => {
                                                         <span className="wm-task-type mini" style={{ width: 'fit-content' }}>{w.role}</span>
                                                     </div>
                                                 </td>
-                                                <td>{w.contact}</td>
-                                                <td>{w.shift}</td>
-                                                <td>{w.region}</td>
+                                                <td>{w.skill || 'No Skill Listed'}</td>
+                                                <td>
+                                                    {w.taskId ? (
+                                                        <span style={{ fontSize: '0.85rem', color: '#6366f1', fontWeight: 600 }}>{w.taskId}</span>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af' }}>Unassigned</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {w.status === 'On Duty' && w.taskId ? (
+                                                        <div className="wm-table-cell-stack">
+                                                            <span>{tasks.find(t => t.id === w.taskId)?.type || 'Active Mission'}</span>
+                                                            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                                                <MapPinIcon style={{ width: '10px', height: '10px', display: 'inline', marginRight: '4px' }} />
+                                                                {tasks.find(t => t.id === w.taskId)?.location || 'Field'}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af' }}>-</span>
+                                                    )}
+                                                </td>
                                                 <td>
                                                     <span className={`wm-status-badge ${getStatusConfig(w.status)}`}>
                                                         {w.status}
