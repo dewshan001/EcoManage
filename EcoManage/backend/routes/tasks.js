@@ -2,6 +2,52 @@ const express = require('express');
 const router = express.Router();
 const { getDB } = require('../db/database');
 
+// Fee structure for auto-invoice generation
+const feeStructure = {
+    'General Waste': { wasteFee: 20, laborFee: 15, vehicleFee: 25 },
+    'Bulk Waste': { wasteFee: 50, laborFee: 30, vehicleFee: 40 },
+    'Hazardous Waste': { wasteFee: 100, laborFee: 50, vehicleFee: 60 },
+    'Recyclables': { wasteFee: 10, laborFee: 10, vehicleFee: 15 }
+};
+
+async function autoCreateInvoice(db, task, report) {
+    try {
+        // Determine waste type — use vehicleType as a proxy if description lacks type
+        const taskType = report ? (report.description || 'General Waste') : 'General Waste';
+        // Try to match to a known fee category
+        const knownTypes = Object.keys(feeStructure);
+        const matchedType = knownTypes.find(t => taskType.toLowerCase().includes(t.toLowerCase())) || 'General Waste';
+        const fees = feeStructure[matchedType];
+        const total = fees.wasteFee + fees.laborFee + fees.vehicleFee;
+
+        // Generate invoice ID
+        const lastRow = await db.get('SELECT invoiceId FROM Invoices ORDER BY id DESC LIMIT 1');
+        const lastNum = lastRow ? parseInt(lastRow.invoiceId.replace('INV-', ''), 10) : 1000;
+        const invoiceId = `INV-${lastNum + 1}`;
+
+        // Get resident info from Users table if possible
+        let residentName = 'Unknown';
+        let residentId = null;
+        if (report && report.userId) {
+            const resident = await db.get('SELECT id, fullName FROM Users WHERE id = ?', [report.userId]);
+            if (resident) {
+                residentName = resident.fullName;
+                residentId = resident.id;
+            }
+        }
+
+        await db.run(
+            `INSERT OR IGNORE INTO Invoices (invoiceId, taskId, residentId, residentName, taskType, wasteFee, laborFee, vehicleFee, total, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Unpaid')`,
+            [invoiceId, task.taskId, residentId, residentName, matchedType, fees.wasteFee, fees.laborFee, fees.vehicleFee, total]
+        );
+
+        console.log(`Auto-invoice created: ${invoiceId} for task ${task.taskId}`);
+    } catch (err) {
+        console.error('Error auto-creating invoice:', err);
+    }
+}
+
 // POST a new task
 router.post('/', async (req, res) => {
     try {
@@ -36,7 +82,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        
+
         const tasks = await db.all(`
             SELECT Tasks.*, Reports.location as location, Reports.description as description 
             FROM Tasks 
@@ -58,7 +104,7 @@ router.get('/:id', async (req, res) => {
         const db = getDB();
 
         const task = await db.get('SELECT * FROM Tasks WHERE id = ? OR taskId = ?', [id, id]);
-        
+
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
         }
@@ -75,7 +121,7 @@ router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { status, priority, scheduleDate, workers, vehicleType, assignedTo, assignedVehicle } = req.body;
-        
+
         const db = getDB();
 
         const existingTask = await db.get('SELECT * FROM Tasks WHERE id = ? OR taskId = ?', [id, id]);
@@ -101,8 +147,14 @@ router.put('/:id', async (req, res) => {
             ]
         );
 
-        // If task is marked Completed, update the linked report to Resolved
-        if (status === 'Completed' && existingTask.reportId) {
+        // If task is set to Completed or Pending Invoice, advance to 'Pending Invoice'
+        // and mark the linked report as Resolved
+        if ((status === 'Completed' || status === 'Pending Invoice') && existingTask.reportId) {
+            // Override the status we just wrote to 'Pending Invoice'
+            await db.run(
+                `UPDATE Tasks SET status = 'Pending Invoice', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+                [actualId]
+            );
             try {
                 await db.run(
                     `UPDATE Reports SET status = 'Resolved' WHERE reportId = ?`,
@@ -127,7 +179,7 @@ router.delete('/:id', async (req, res) => {
         const db = getDB();
 
         const result = await db.run('DELETE FROM Tasks WHERE id = ? OR taskId = ?', [id, id]);
-        
+
         if (result.changes === 0) {
             return res.status(404).json({ message: 'Task not found' });
         }

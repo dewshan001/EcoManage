@@ -337,4 +337,18 @@ router.delete('/workers/:id', async (req, res) => {
     }
 });
 
+// Get all Residents (for billing form)
+router.get('/residents', async (req, res) => {
+    try {
+        const db = getDB();
+        const residents = await db.all(
+            `SELECT id, fullName, email FROM Users WHERE role = 'Resident' ORDER BY fullName ASC`
+        );
+        res.status(200).json({ residents });
+    } catch (error) {
+        console.error('Fetch residents error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
 module.exports = router;

@@ -29,6 +29,10 @@ app.use('/api/tasks', taskRoutes);
 const vehicleRoutes = require('./routes/vehicles');
 app.use('/api/vehicles', vehicleRoutes);
 
+// Billing Routes
+const billingRoutes = require('./routes/billing');
+app.use('/api/billing', billingRoutes);
+
 // Initialize Database and Start Server
 initDB()
     .then(() => {

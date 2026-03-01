@@ -73,6 +73,9 @@ const StatusBadge = ({ status }) => {
     'In Review': { icon: <AlertCircleIcon />, color: 'review' },
     Approved: { icon: <CheckCircleIcon />, color: 'approved' },
     Rejected: { icon: <XCircleIcon />, color: 'rejected' },
+    'Pending Invoice': { icon: <ClockIcon />, color: 'review' },
+    'Pending Payment': { icon: <ClockIcon />, color: 'pending' },
+    'Payment Completed': { icon: <CheckCircleIcon />, color: 'approved' },
   };
   const config = configs[status] || configs.Pending;
   return (
@@ -138,7 +141,7 @@ const ReportReview = () => {
         const data = await res.json();
         setComplaints(data);
       }
-      
+
       const tasksRes = await fetch('http://localhost:5000/api/tasks');
       if (tasksRes.ok) {
         const tasksData = await tasksRes.json();
@@ -182,6 +185,24 @@ const ReportReview = () => {
     }
   };
 
+  const handleUpdateTaskStatus = async (task, newStatus) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/tasks/${task.taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
+      } else {
+        alert('Failed to update task status');
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  };
+
+
   // Auto-select first item when changing modes
   useEffect(() => {
     if (modeComplaints.length > 0) {
@@ -205,7 +226,7 @@ const ReportReview = () => {
   const changeMode = (mode) => {
     setActiveMode(mode);
     setFilter('all');
-    
+
     // Auto-generate task ID if switching to tasks mode and it's empty
     if (mode === 'tasks' && !taskForm.taskId) {
       setTaskForm(prev => ({ ...prev, taskId: generateTaskId() }));
@@ -253,10 +274,10 @@ const ReportReview = () => {
         );
 
         // Reset form for next decision and auto-generate new ID if in task mode
-        setTaskForm((prev) => ({ 
-          ...prev, 
-          taskId: activeMode === 'tasks' ? generateTaskId() : '', 
-          scheduleDate: '' 
+        setTaskForm((prev) => ({
+          ...prev,
+          taskId: activeMode === 'tasks' ? generateTaskId() : '',
+          scheduleDate: ''
         }));
       }
     } catch (error) {
@@ -292,8 +313,8 @@ const ReportReview = () => {
             {activeMode === 'review'
               ? 'Verify submitted garbage complaints and approve or reject them based on evidence.'
               : activeMode === 'tasks'
-              ? 'Take approved complaints and instantly create structured cleanup tasks linked by Task IDs.'
-              : 'View the status of all assigned, ongoing, and completed tasks.'}
+                ? 'Take approved complaints and instantly create structured cleanup tasks linked by Task IDs.'
+                : 'View the status of all assigned, ongoing, and completed tasks.'}
           </p>
         </header>
 
@@ -320,362 +341,362 @@ const ReportReview = () => {
         </div>
 
         {activeMode !== 'dashboard' ? (
-        <div className="rr-layout animate-fade-in-up delay-100">
-          {/* Complaints Queue Panel */}
-          <aside className="rr-sidebar-panel">
-            <div className="rr-sidebar-header">
-              <div className="rr-sidebar-title-group">
-                <h2 className="rr-sidebar-title">Complaints Queue</h2>
-                <span className="rr-count-badge">{filteredComplaints.length}</span>
+          <div className="rr-layout animate-fade-in-up delay-100">
+            {/* Complaints Queue Panel */}
+            <aside className="rr-sidebar-panel">
+              <div className="rr-sidebar-header">
+                <div className="rr-sidebar-title-group">
+                  <h2 className="rr-sidebar-title">Complaints Queue</h2>
+                  <span className="rr-count-badge">{filteredComplaints.length}</span>
+                </div>
+                <p className="rr-sidebar-subtitle">Review and validate citizen reports</p>
               </div>
-              <p className="rr-sidebar-subtitle">Review and validate citizen reports</p>
-            </div>
 
-            {/* Modern Segmented Filter Bar */}
-            <div className="rr-filter-segments">
-              {activeMode === 'review' ? (
-                ['all', 'Pending', 'In Review', 'Rejected'].map((f) => (
-                  <button
-                    key={f}
-                    className={`filter-pill ${filter === f ? 'active' : ''}`}
-                    onClick={() => setFilter(f)}
-                  >
-                    {f === 'all' ? 'All Statuses' : f}
-                  </button>
-                ))
-              ) : (
-                ['all', 'Approved'].map((f) => (
-                  <button
-                    key={f}
-                    className={`filter-pill ${filter === f ? 'active' : ''}`}
-                    onClick={() => setFilter(f)}
-                  >
-                    {f === 'all' ? 'All Approved' : f}
-                  </button>
-                ))
-              )}
-            </div>
+              {/* Modern Segmented Filter Bar */}
+              <div className="rr-filter-segments">
+                {activeMode === 'review' ? (
+                  ['all', 'Pending', 'In Review', 'Rejected'].map((f) => (
+                    <button
+                      key={f}
+                      className={`filter-pill ${filter === f ? 'active' : ''}`}
+                      onClick={() => setFilter(f)}
+                    >
+                      {f === 'all' ? 'All Statuses' : f}
+                    </button>
+                  ))
+                ) : (
+                  ['all', 'Approved'].map((f) => (
+                    <button
+                      key={f}
+                      className={`filter-pill ${filter === f ? 'active' : ''}`}
+                      onClick={() => setFilter(f)}
+                    >
+                      {f === 'all' ? 'All Approved' : f}
+                    </button>
+                  ))
+                )}
+              </div>
 
-            <div className="rr-complaints-list">
-              {filteredComplaints.map((c) => (
-                <div
-                  key={c.id}
-                  className={`complaint-card ${selectedComplaint?.id === c.id ? 'active' : ''}`}
-                  onClick={() => setSelectedId(c.id)}
-                >
-                  {c.imageUrl && (
-                    <div className="complaint-thumbnail">
-                      <img src={c.imageUrl} alt="Report" />
-                      <div className="thumbnail-overlay"></div>
-                    </div>
-                  )}
-                  <div className="complaint-content">
-                    <div className="complaint-header">
-                      <div className="card-id-group">
-                        <span className={`status-dot ${c.status.toLowerCase().replace(' ', '-')}`} />
-                        <span className="complaint-id">{c.reportId}</span>
+              <div className="rr-complaints-list">
+                {filteredComplaints.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`complaint-card ${selectedComplaint?.id === c.id ? 'active' : ''}`}
+                    onClick={() => setSelectedId(c.id)}
+                  >
+                    {c.imageUrl && (
+                      <div className="complaint-thumbnail">
+                        <img src={c.imageUrl} alt="Report" />
+                        <div className="thumbnail-overlay"></div>
                       </div>
-                      <StatusBadge status={c.status} />
-                    </div>
-                    <h3 className="complaint-location">
-                      <MapPinIcon />
-                      {c.location}
-                    </h3>
-                    <p className="complaint-preview">{c.description}</p>
-                    <div className="complaint-meta">
-                      <span className="meta-item">
-                        <CalendarIcon />
-                        {formatDate(c.date || c.createdAt)}
-                      </span>
-                      {c.linkedTaskId && (
-                        <span className="meta-linked">→ {c.linkedTaskId}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {filteredComplaints.length === 0 && (
-                <div className="empty-state">
-                  <div className="empty-icon">🍃</div>
-                  <h3>No complaints found</h3>
-                  <p>Try adjusting your filters</p>
-                </div>
-              )}
-            </div>
-          </aside>
-
-          {/* Detail & Task Creation Panel */}
-          <section className="rr-content-panel">
-            {isLoading ? (
-              <div className="empty-selection">
-                <div className="loader-pulse"></div>
-                <p>Loading complaints...</p>
-              </div>
-            ) : selectedComplaint ? (
-              <>
-                <div className="rr-content-header">
-                  <div className="rr-content-title-group">
-                    <h2 className="rr-content-title">{selectedComplaint.location}</h2>
-                    <p className="rr-content-subtitle">
-                      Report ID: {selectedComplaint.reportId} • Citizen: {selectedComplaint.citizenName || 'Anonymous'}
-                    </p>
-                  </div>
-                  <div className="rr-status-group">
-                    <StatusBadge status={selectedComplaint.status} />
-                    {selectedComplaint.linkedTaskId && (
-                      <span className="linked-task-badge">
-                        Task: {selectedComplaint.linkedTaskId}
-                      </span>
                     )}
-                  </div>
-                </div>
-
-                <div className="rr-content-grid">
-                  {/* Left: Description & Image */}
-                  <div className="rr-evidence-section">
-                    <div className="evidence-card">
-                      <div className="evidence-header">
-                        <h3>Description & Details</h3>
-                        <span className="evidence-date">
-                          <CalendarIcon />
-                          {formatDate(selectedComplaint.date || selectedComplaint.createdAt)}
-                        </span>
+                    <div className="complaint-content">
+                      <div className="complaint-header">
+                        <div className="card-id-group">
+                          <span className={`status-dot ${c.status.toLowerCase().replace(' ', '-')}`} />
+                          <span className="complaint-id">{c.reportId}</span>
+                        </div>
+                        <StatusBadge status={c.status} />
                       </div>
-                      <p className="evidence-description">{selectedComplaint.description}</p>
+                      <h3 className="complaint-location">
+                        <MapPinIcon />
+                        {c.location}
+                      </h3>
+                      <p className="complaint-preview">{c.description}</p>
+                      <div className="complaint-meta">
+                        <span className="meta-item">
+                          <CalendarIcon />
+                          {formatDate(c.date || c.createdAt)}
+                        </span>
+                        {c.linkedTaskId && (
+                          <span className="meta-linked">→ {c.linkedTaskId}</span>
+                        )}
+                      </div>
                     </div>
+                  </div>
+                ))}
 
-                    <div className="evidence-card image-card">
-                      <h3>Photo Evidence</h3>
-                      {selectedComplaint.imageUrl ? (
-                        <div className="evidence-image-wrapper">
-                          <img
-                            src={selectedComplaint.imageUrl}
-                            alt="Complaint evidence"
-                            className="evidence-image"
-                          />
-                        </div>
-                      ) : (
-                        <div className="no-image-state">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                          <p>No image attached</p>
-                        </div>
+                {filteredComplaints.length === 0 && (
+                  <div className="empty-state">
+                    <div className="empty-icon">🍃</div>
+                    <h3>No complaints found</h3>
+                    <p>Try adjusting your filters</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+
+            {/* Detail & Task Creation Panel */}
+            <section className="rr-content-panel">
+              {isLoading ? (
+                <div className="empty-selection">
+                  <div className="loader-pulse"></div>
+                  <p>Loading complaints...</p>
+                </div>
+              ) : selectedComplaint ? (
+                <>
+                  <div className="rr-content-header">
+                    <div className="rr-content-title-group">
+                      <h2 className="rr-content-title">{selectedComplaint.location}</h2>
+                      <p className="rr-content-subtitle">
+                        Report ID: {selectedComplaint.reportId} • Citizen: {selectedComplaint.citizenName || 'Anonymous'}
+                      </p>
+                    </div>
+                    <div className="rr-status-group">
+                      <StatusBadge status={selectedComplaint.status} />
+                      {selectedComplaint.linkedTaskId && (
+                        <span className="linked-task-badge">
+                          Task: {selectedComplaint.linkedTaskId}
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Right: Task Creation OR Decision */}
-                  <div className="rr-task-section">
-                    <div className="task-creation-card">
-                      <div className="task-card-header">
-                        <h3>{activeMode === 'review' ? 'Report Decision' : 'Task Assignment'}</h3>
-                        <p>
-                          {activeMode === 'review'
-                            ? 'Review the evidence and decide the status of this complaint.'
-                            : 'Define cleanup task parameters and link to this approved complaint.'}
-                        </p>
+                  <div className="rr-content-grid">
+                    {/* Left: Description & Image */}
+                    <div className="rr-evidence-section">
+                      <div className="evidence-card">
+                        <div className="evidence-header">
+                          <h3>Description & Details</h3>
+                          <span className="evidence-date">
+                            <CalendarIcon />
+                            {formatDate(selectedComplaint.date || selectedComplaint.createdAt)}
+                          </span>
+                        </div>
+                        <p className="evidence-description">{selectedComplaint.description}</p>
                       </div>
 
-                      <form className="task-form" onSubmit={handleApplyDecision}>
-
-                        {activeMode === 'review' ? (
-                          <>
-                            {/* Decision Toggle - Only in Review Mode */}
-                            <div className="form-group">
-                              <label className="form-label">Decision</label>
-                              <div className="decision-toggle-group">
-                                <button
-                                  type="button"
-                                  className={`decision-toggle approve ${taskForm.decision === 'approve' ? 'active' : ''}`}
-                                  onClick={() => handleTaskChange('decision', 'approve')}
-                                >
-                                  <CheckCircleIcon /> Approve Report
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`decision-toggle reject ${taskForm.decision === 'reject' ? 'active' : ''}`}
-                                  onClick={() => handleTaskChange('decision', 'reject')}
-                                >
-                                  <XCircleIcon /> Reject Report
-                                </button>
-                              </div>
-                            </div>
-
-                            <button type="submit" className={`btn-submit ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
-                              {isSubmitting ? 'Processing...' : taskForm.decision === 'approve' ? (
-                                <>
-                                  <CheckCircleIcon /> Confirm Approval
-                                </>
-                              ) : (
-                                <>
-                                  <XCircleIcon /> Confirm Rejection
-                                </>
-                              )}
-                            </button>
-                          </>
+                      <div className="evidence-card image-card">
+                        <h3>Photo Evidence</h3>
+                        {selectedComplaint.imageUrl ? (
+                          <div className="evidence-image-wrapper">
+                            <img
+                              src={selectedComplaint.imageUrl}
+                              alt="Complaint evidence"
+                              className="evidence-image"
+                            />
+                          </div>
                         ) : (
-                          <>
-                            {/* Task Form - Only in Tasks Mode */}
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="taskId" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Task ID</span>
-                                <button 
-                                  type="button" 
-                                  onClick={() => setTaskForm(prev => ({ ...prev, taskId: generateTaskId() }))}
-                                  style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                >
-                                  ↻ Generate New
-                                </button>
-                              </label>
-                              <input
-                                type="text"
-                                id="taskId"
-                                className="form-input"
-                                placeholder="e.g., TASK-1234"
-                                value={taskForm.taskId}
-                                onChange={(e) => handleTaskChange('taskId', e.target.value)}
-                                required
-                              />
-                              <span className="form-hint">
-                                Unique identifier to link this task with the complaint
-                              </span>
-                            </div>
-
-                            <div className="form-row">
-                              <div className="form-group">
-                                <label className="form-label" htmlFor="priority">
-                                  <AlertCircleIcon /> Priority Level
-                                </label>
-                                <select
-                                  id="priority"
-                                  className="form-input"
-                                  value={taskForm.priority}
-                                  onChange={(e) => handleTaskChange('priority', e.target.value)}
-                                >
-                                  <option>Low</option>
-                                  <option>Medium</option>
-                                  <option>High</option>
-                                </select>
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" htmlFor="scheduleDate">
-                                  <CalendarIcon /> Schedule Date
-                                </label>
-                                <input
-                                  type="date"
-                                  id="scheduleDate"
-                                  className="form-input"
-                                  value={taskForm.scheduleDate}
-                                  onChange={(e) => handleTaskChange('scheduleDate', e.target.value)}
-                                  required
-                                />
-                              </div>
-                            </div>
-
-                            <div className="form-row">
-                              <div className="form-group">
-                                <label className="form-label" htmlFor="workers">
-                                  <UsersIcon /> Required Workers
-                                </label>
-                                <input
-                                  type="number"
-                                  id="workers"
-                                  min="1"
-                                  max="50"
-                                  className="form-input"
-                                  value={taskForm.workers}
-                                  onChange={(e) => handleTaskChange('workers', e.target.value)}
-                                  required
-                                />
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" htmlFor="vehicleType">
-                                  <TruckIcon /> Vehicle Type
-                                </label>
-                                <select
-                                  id="vehicleType"
-                                  className="form-input"
-                                  value={taskForm.vehicleType}
-                                  onChange={(e) => handleTaskChange('vehicleType', e.target.value)}
-                                >
-                                  {VEHICLE_TYPES.map((v) => (
-                                    <option key={v} value={v}>
-                                      {v}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="task-summary">
-                              <div className="summary-header">
-                                <span>Task Summary</span>
-                              </div>
-                              <div className="summary-tags">
-                                <PriorityBadge priority={taskForm.priority} />
-                                {taskForm.scheduleDate && (
-                                  <span className="summary-tag">
-                                    <CalendarIcon />
-                                    {taskForm.scheduleDate}
-                                  </span>
-                                )}
-                                <span className="summary-tag">
-                                  <UsersIcon />
-                                  {taskForm.workers} workers
-                                </span>
-                                <span className="summary-tag">
-                                  <TruckIcon />
-                                  {taskForm.vehicleType}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            {(() => {
-                              const hasAvailableVehicle = vehicles.some(v => v.status === 'Available' && v.type === taskForm.vehicleType);
-                              return (
-                                <>
-                                  {!hasAvailableVehicle && (
-                                    <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                      <AlertCircleIcon /> No available vehicle of this type. Task creation disabled.
-                                    </div>
-                                  )}
-                                  <button type="submit" className={`btn-submit ${isSubmitting || !hasAvailableVehicle ? 'loading' : ''}`} disabled={isSubmitting || !hasAvailableVehicle} style={{ opacity: (!hasAvailableVehicle && !isSubmitting) ? 0.6 : 1, cursor: (!hasAvailableVehicle && !isSubmitting) ? 'not-allowed' : 'pointer' }}>
-                                    {isSubmitting ? 'Processing...' : (
-                                      <>
-                                        <CheckCircleIcon /> Link & Create Task
-                                      </>
-                                    )}
-                                  </button>
-                                </>
-                              );
-                            })()}
-                          </>
+                          <div className="no-image-state">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <p>No image attached</p>
+                          </div>
                         )}
-                      </form>
+                      </div>
+                    </div>
+
+                    {/* Right: Task Creation OR Decision */}
+                    <div className="rr-task-section">
+                      <div className="task-creation-card">
+                        <div className="task-card-header">
+                          <h3>{activeMode === 'review' ? 'Report Decision' : 'Task Assignment'}</h3>
+                          <p>
+                            {activeMode === 'review'
+                              ? 'Review the evidence and decide the status of this complaint.'
+                              : 'Define cleanup task parameters and link to this approved complaint.'}
+                          </p>
+                        </div>
+
+                        <form className="task-form" onSubmit={handleApplyDecision}>
+
+                          {activeMode === 'review' ? (
+                            <>
+                              {/* Decision Toggle - Only in Review Mode */}
+                              <div className="form-group">
+                                <label className="form-label">Decision</label>
+                                <div className="decision-toggle-group">
+                                  <button
+                                    type="button"
+                                    className={`decision-toggle approve ${taskForm.decision === 'approve' ? 'active' : ''}`}
+                                    onClick={() => handleTaskChange('decision', 'approve')}
+                                  >
+                                    <CheckCircleIcon /> Approve Report
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`decision-toggle reject ${taskForm.decision === 'reject' ? 'active' : ''}`}
+                                    onClick={() => handleTaskChange('decision', 'reject')}
+                                  >
+                                    <XCircleIcon /> Reject Report
+                                  </button>
+                                </div>
+                              </div>
+
+                              <button type="submit" className={`btn-submit ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
+                                {isSubmitting ? 'Processing...' : taskForm.decision === 'approve' ? (
+                                  <>
+                                    <CheckCircleIcon /> Confirm Approval
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircleIcon /> Confirm Rejection
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {/* Task Form - Only in Tasks Mode */}
+                              <div className="form-group">
+                                <label className="form-label" htmlFor="taskId" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Task ID</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTaskForm(prev => ({ ...prev, taskId: generateTaskId() }))}
+                                    style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                  >
+                                    ↻ Generate New
+                                  </button>
+                                </label>
+                                <input
+                                  type="text"
+                                  id="taskId"
+                                  className="form-input"
+                                  placeholder="e.g., TASK-1234"
+                                  value={taskForm.taskId}
+                                  onChange={(e) => handleTaskChange('taskId', e.target.value)}
+                                  required
+                                />
+                                <span className="form-hint">
+                                  Unique identifier to link this task with the complaint
+                                </span>
+                              </div>
+
+                              <div className="form-row">
+                                <div className="form-group">
+                                  <label className="form-label" htmlFor="priority">
+                                    <AlertCircleIcon /> Priority Level
+                                  </label>
+                                  <select
+                                    id="priority"
+                                    className="form-input"
+                                    value={taskForm.priority}
+                                    onChange={(e) => handleTaskChange('priority', e.target.value)}
+                                  >
+                                    <option>Low</option>
+                                    <option>Medium</option>
+                                    <option>High</option>
+                                  </select>
+                                </div>
+                                <div className="form-group">
+                                  <label className="form-label" htmlFor="scheduleDate">
+                                    <CalendarIcon /> Schedule Date
+                                  </label>
+                                  <input
+                                    type="date"
+                                    id="scheduleDate"
+                                    className="form-input"
+                                    value={taskForm.scheduleDate}
+                                    onChange={(e) => handleTaskChange('scheduleDate', e.target.value)}
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="form-row">
+                                <div className="form-group">
+                                  <label className="form-label" htmlFor="workers">
+                                    <UsersIcon /> Required Workers
+                                  </label>
+                                  <input
+                                    type="number"
+                                    id="workers"
+                                    min="1"
+                                    max="50"
+                                    className="form-input"
+                                    value={taskForm.workers}
+                                    onChange={(e) => handleTaskChange('workers', e.target.value)}
+                                    required
+                                  />
+                                </div>
+                                <div className="form-group">
+                                  <label className="form-label" htmlFor="vehicleType">
+                                    <TruckIcon /> Vehicle Type
+                                  </label>
+                                  <select
+                                    id="vehicleType"
+                                    className="form-input"
+                                    value={taskForm.vehicleType}
+                                    onChange={(e) => handleTaskChange('vehicleType', e.target.value)}
+                                  >
+                                    {VEHICLE_TYPES.map((v) => (
+                                      <option key={v} value={v}>
+                                        {v}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="task-summary">
+                                <div className="summary-header">
+                                  <span>Task Summary</span>
+                                </div>
+                                <div className="summary-tags">
+                                  <PriorityBadge priority={taskForm.priority} />
+                                  {taskForm.scheduleDate && (
+                                    <span className="summary-tag">
+                                      <CalendarIcon />
+                                      {taskForm.scheduleDate}
+                                    </span>
+                                  )}
+                                  <span className="summary-tag">
+                                    <UsersIcon />
+                                    {taskForm.workers} workers
+                                  </span>
+                                  <span className="summary-tag">
+                                    <TruckIcon />
+                                    {taskForm.vehicleType}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {(() => {
+                                const hasAvailableVehicle = vehicles.some(v => v.status === 'Available' && v.type === taskForm.vehicleType);
+                                return (
+                                  <>
+                                    {!hasAvailableVehicle && (
+                                      <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <AlertCircleIcon /> No available vehicle of this type. Task creation disabled.
+                                      </div>
+                                    )}
+                                    <button type="submit" className={`btn-submit ${isSubmitting || !hasAvailableVehicle ? 'loading' : ''}`} disabled={isSubmitting || !hasAvailableVehicle} style={{ opacity: (!hasAvailableVehicle && !isSubmitting) ? 0.6 : 1, cursor: (!hasAvailableVehicle && !isSubmitting) ? 'not-allowed' : 'pointer' }}>
+                                      {isSubmitting ? 'Processing...' : (
+                                        <>
+                                          <CheckCircleIcon /> Link & Create Task
+                                        </>
+                                      )}
+                                    </button>
+                                  </>
+                                );
+                              })()}
+                            </>
+                          )}
+                        </form>
+                      </div>
                     </div>
                   </div>
+                </>
+              ) : (
+                <div className="empty-selection">
+                  <div className="empty-selection-icon">🍃</div>
+                  <h3>No complaint selected</h3>
+                  <p>Select a complaint from the queue to review and create tasks</p>
                 </div>
-              </>
-            ) : (
-              <div className="empty-selection">
-                <div className="empty-selection-icon">🍃</div>
-                <h3>No complaint selected</h3>
-                <p>Select a complaint from the queue to review and create tasks</p>
-              </div>
-            )}
-          </section>
-        </div>
+              )}
+            </section>
+          </div>
         ) : (
           <div className="rr-layout animate-fade-in-up delay-100" style={{ display: 'block' }}>
             <div className="task-board">
               <div className="task-board-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', color: 'var(--text-main)', margin: 0 }}>System Activity Log</h2>
                 <div className="rr-filter-segments" style={{ margin: 0 }}>
-                  {['all', 'Assigned', 'Active', 'Completed'].map((f) => (
+                  {['all', 'Pending Vehicle', 'Assigned', 'Active', 'Completed', 'Pending Invoice', 'Pending Payment', 'Payment Completed'].map((f) => (
                     <button
                       key={f}
                       className={`filter-pill ${filter === f ? 'active' : ''}`}
@@ -696,64 +717,111 @@ const ReportReview = () => {
                 {tasks
                   .filter(t => filter === 'all' ? true : t.status === filter)
                   .map(task => (
-                  <div key={task.id} className="task-card" style={{
-                    background: 'var(--card-bg)',
-                    borderRadius: '16px',
-                    padding: '1.5rem',
-                    boxShadow: 'var(--shadow-sm)',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1rem'
-                  }}>
-                    <div className="task-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div className="task-id-badge" style={{
-                        background: 'var(--bg-lighter)',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        color: 'var(--primary-color)'
-                      }}>
-                        {task.taskId}
-                      </div>
-                      <StatusBadge status={task.status} />
-                    </div>
-
-                    <div className="task-details">
-                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{task.location || 'Unknown Location'}</h4>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {task.description || 'General maintenance task'}
-                      </p>
-                    </div>
-
-                    <div className="summary-tags" style={{ padding: '0.75rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-                      <PriorityBadge priority={task.priority} />
-                      {task.scheduleDate && (
-                        <span className="summary-tag"><CalendarIcon /> {task.scheduleDate.split('T')[0]}</span>
-                      )}
-                      <span className="summary-tag"><TruckIcon /> {task.vehicleType || 'Not specified'}</span>
-                    </div>
-
-                    <div className="task-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                      <div className="task-meta-item" style={{ color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <UsersIcon /> {task.assignedTo ? `Worker: ${task.assignedTo}` : 'Unassigned'}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div className="task-meta-item" style={{ color: 'var(--text-light)' }}>
-                          Linked: <strong>{task.reportId}</strong>
+                    <div key={task.id} className="task-card" style={{
+                      background: 'var(--card-bg)',
+                      borderRadius: '16px',
+                      padding: '1.5rem',
+                      boxShadow: 'var(--shadow-sm)',
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem'
+                    }}>
+                      <div className="task-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div className="task-id-badge" style={{
+                          background: 'var(--bg-lighter)',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          color: 'var(--primary-color)'
+                        }}>
+                          {task.taskId}
                         </div>
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          title="Delete Task"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
+                        <StatusBadge status={task.status} />
+                      </div>
+
+                      <div className="task-details">
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>{task.location || 'Unknown Location'}</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {task.description || 'General maintenance task'}
+                        </p>
+                      </div>
+
+                      <div className="summary-tags" style={{ padding: '0.75rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+                        <PriorityBadge priority={task.priority} />
+                        {task.scheduleDate && (
+                          <span className="summary-tag"><CalendarIcon /> {task.scheduleDate.split('T')[0]}</span>
+                        )}
+                        <span className="summary-tag"><TruckIcon /> {task.vehicleType || 'Not specified'}</span>
+                      </div>
+
+                      <div className="task-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', flexWrap: 'wrap', gap: '8px' }}>
+                        <div className="task-meta-item" style={{ color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <UsersIcon /> {task.assignedTo ? `Worker: ${task.assignedTo}` : 'Unassigned'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+
+                          {/* Status label for billing-pipeline statuses (read-only in task board) */}
+                          {['Pending Invoice', 'Pending Payment', 'Payment Completed'].includes(task.status) ? (
+                            <span style={{
+                              padding: '3px 10px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: '600',
+                              background: task.status === 'Payment Completed' ? '#ecfdf5' : task.status === 'Pending Payment' ? '#fef3c7' : '#eff6ff',
+                              color: task.status === 'Payment Completed' ? '#059669' : task.status === 'Pending Payment' ? '#d97706' : '#2563eb',
+                              border: `1px solid ${task.status === 'Payment Completed' ? '#a7f3d0' : task.status === 'Pending Payment' ? '#fde68a' : '#bfdbfe'}`
+                            }}>
+                              {task.status}
+                            </span>
+                          ) : (
+                            <>
+                              {/* Status dropdown for pre-billing statuses */}
+                              <select
+                                value={task.status}
+                                onChange={e => handleUpdateTaskStatus(task, e.target.value)}
+                                title="Update status"
+                                style={{
+                                  fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px',
+                                  border: '1px solid #d1d5db', background: '#f9fafb',
+                                  color: '#374151', cursor: 'pointer', outline: 'none'
+                                }}
+                              >
+                                <option value="Pending Vehicle">Pending Vehicle</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Assigned">Assigned</option>
+                                <option value="Active">Active</option>
+                                <option value="Completed">Completed ✓</option>
+                              </select>
+
+                              {/* Quick Complete → sends to billing pipeline */}
+                              <button
+                                onClick={() => handleUpdateTaskStatus(task, 'Pending Invoice')}
+                                title="Mark as Completed (moves to Pending Invoice)"
+                                style={{
+                                  background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#059669',
+                                  cursor: 'pointer', padding: '4px 10px', borderRadius: '6px',
+                                  display: 'flex', alignItems: 'center', gap: '4px',
+                                  fontSize: '0.78rem', fontWeight: '600'
+                                }}
+                              >
+                                <CheckCircleIcon /> Complete
+                              </button>
+                            </>
+                          )}
+
+                          <div className="task-meta-item" style={{ color: 'var(--text-light)' }}>
+                            Linked: <strong>{task.reportId}</strong>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            title="Delete Task"
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
                 {tasks.length === 0 && (
                   <div className="empty-selection" style={{ gridColumn: '1 / -1', padding: '4rem 2rem' }}>

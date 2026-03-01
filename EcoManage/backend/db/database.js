@@ -99,11 +99,11 @@ async function createTables() {
         // Safely add assignedTo column to Tasks if it doesn't exist
         try {
             await db.exec(`ALTER TABLE Tasks ADD COLUMN assignedTo TEXT;`);
-        } catch (e) {}
+        } catch (e) { }
 
         try {
             await db.exec(`ALTER TABLE Tasks ADD COLUMN assignedVehicle TEXT;`);
-        } catch (e) {}
+        } catch (e) { }
 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS Vehicles (
@@ -123,6 +123,25 @@ async function createTables() {
             );
         `);
         console.log('Vehicles table initialized.');
+
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS Invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoiceId TEXT UNIQUE NOT NULL,
+                taskId TEXT,
+                residentId INTEGER,
+                residentName TEXT,
+                taskType TEXT,
+                wasteFee REAL DEFAULT 0,
+                laborFee REAL DEFAULT 0,
+                vehicleFee REAL DEFAULT 0,
+                total REAL DEFAULT 0,
+                status TEXT DEFAULT 'Unpaid',
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                paidAt DATETIME
+            );
+        `);
+        console.log('Invoices table initialized.');
 
         // Safely add userId column to existing Reports table if it doesn't exist
         try {
@@ -151,6 +170,27 @@ async function createTables() {
             await db.exec(`ALTER TABLE Users ADD COLUMN workerStatus TEXT;`);
         } catch (e) {
             // Columns already exist
+        }
+
+        // ── Billing pipeline migration ──────────────────────────────────────
+        // Promote any existing tasks that are linked to Approved/Resolved
+        // reports but still have a pre-billing status into 'Pending Invoice'
+        // so they appear in the invoice picker immediately.
+        try {
+            await db.run(`
+                UPDATE Tasks
+                SET    status = 'Pending Invoice',
+                       updatedAt = CURRENT_TIMESTAMP
+                WHERE  status NOT IN ('Pending Invoice','Pending Payment','Payment Completed')
+                  AND  reportId IN (
+                       SELECT reportId FROM Reports
+                       WHERE  status IN ('Approved','Resolved')
+                         AND  linkedTaskId IS NOT NULL
+                  )
+            `);
+            console.log('Billing pipeline migration: eligible tasks promoted to Pending Invoice.');
+        } catch (e) {
+            console.error('Billing pipeline migration error:', e);
         }
     } catch (error) {
         console.error('Error creating tables:', error);
