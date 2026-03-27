@@ -65,7 +65,18 @@ router.get('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, linkedTaskId, priority, scheduleDate, workers, vehicleType } = req.body;
+        const {
+            status,
+            linkedTaskId,
+            priority,
+            scheduleDate,
+            workers,
+            vehicleType,
+            location,
+            description,
+            imageUrl,
+            userId
+        } = req.body;
 
         const db = getDB();
 
@@ -75,38 +86,75 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Report not found' });
         }
 
-        const decisionDate = new Date().toISOString();
+        // Optional ownership check for resident edits.
+        // Admin updates can omit userId and proceed.
+        if (userId !== undefined && Number(existingReport.userId) !== Number(userId)) {
+            return res.status(403).json({ message: 'You are not allowed to edit this report' });
+        }
+
+        if (location !== undefined && !String(location).trim()) {
+            return res.status(400).json({ message: 'Location is required' });
+        }
+
+        if (description !== undefined && !String(description).trim()) {
+            return res.status(400).json({ message: 'Description is required' });
+        }
+
+        const nextLocation = location !== undefined ? String(location).trim() : existingReport.location;
+        const nextDescription = description !== undefined ? String(description).trim() : existingReport.description;
+        const nextImageUrl = imageUrl !== undefined ? imageUrl : existingReport.imageUrl;
+        const nextStatus = status !== undefined ? status : existingReport.status;
+        const nextLinkedTaskId = linkedTaskId !== undefined ? linkedTaskId : existingReport.linkedTaskId;
+        const nextPriority = priority !== undefined ? priority : existingReport.priority;
+        const nextScheduleDate = scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate;
+        const nextWorkers = workers !== undefined ? workers : existingReport.workers;
+        const nextVehicleType = vehicleType !== undefined ? vehicleType : existingReport.vehicleType;
+
+        const adminFieldsChanged =
+            status !== undefined ||
+            linkedTaskId !== undefined ||
+            priority !== undefined ||
+            scheduleDate !== undefined ||
+            workers !== undefined ||
+            vehicleType !== undefined;
+
+        const decisionDate = adminFieldsChanged ? new Date().toISOString() : existingReport.decisionDate;
 
         await db.run(
             `UPDATE Reports 
-             SET status = ?, linkedTaskId = ?, priority = ?, scheduleDate = ?, workers = ?, vehicleType = ?, decisionDate = ?
+             SET location = ?, description = ?, imageUrl = ?, status = ?, linkedTaskId = ?, priority = ?, scheduleDate = ?, workers = ?, vehicleType = ?, decisionDate = ?
              WHERE id = ?`,
             [
-                status || existingReport.status,
-                linkedTaskId || existingReport.linkedTaskId,
-                priority || existingReport.priority,
-                scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate,
-                workers !== undefined ? workers : existingReport.workers,
-                vehicleType !== undefined ? vehicleType : existingReport.vehicleType,
+                nextLocation,
+                nextDescription,
+                nextImageUrl,
+                nextStatus,
+                nextLinkedTaskId,
+                nextPriority,
+                nextScheduleDate,
+                nextWorkers,
+                nextVehicleType,
                 decisionDate,
                 id
             ]
         );
 
         // If a new task is linked, insert/update it in the Tasks table
-        if (linkedTaskId && linkedTaskId !== existingReport.linkedTaskId) {
+        if (nextLinkedTaskId && nextLinkedTaskId !== existingReport.linkedTaskId) {
             try {
                 // Try to insert a new task
                 await db.run(
                     'INSERT OR IGNORE INTO Tasks (taskId, reportId, priority, scheduleDate, workers, vehicleType, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [linkedTaskId, existingReport.reportId, priority || existingReport.priority, scheduleDate !== undefined ? scheduleDate : existingReport.scheduleDate, workers !== undefined ? workers : existingReport.workers, vehicleType !== undefined ? vehicleType : existingReport.vehicleType, 'Pending Vehicle']
+                    [nextLinkedTaskId, existingReport.reportId, nextPriority, nextScheduleDate, nextWorkers, nextVehicleType, 'Pending Vehicle']
                 );
             } catch (err) {
                 console.error('Error syncing task from report update:', err);
             }
         }
 
-        res.json({ message: 'Report updated successfully', id });
+        const updatedReport = await db.get('SELECT * FROM Reports WHERE id = ?', [id]);
+
+        res.json({ message: 'Report updated successfully', id, report: updatedReport });
     } catch (error) {
         console.error('Error updating report:', error);
         res.status(500).json({ message: 'Server error while updating report' });

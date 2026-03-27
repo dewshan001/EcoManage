@@ -63,6 +63,9 @@ const Reports = () => {
     // State for history data
     const [history, setHistory] = useState([]);
     const [reportToDelete, setReportToDelete] = useState(null);
+    const [reportToEdit, setReportToEdit] = useState(null);
+    const [editForm, setEditForm] = useState({ location: '', description: '', imageUrl: null });
+    const [isUpdating, setIsUpdating] = useState(false);
 
     // Fetch reports from the backend
     const fetchReports = async () => {
@@ -104,6 +107,73 @@ const Reports = () => {
             alert('Failed to delete report');
         } finally {
             setReportToDelete(null);
+        }
+    };
+
+    const openEditModal = (report) => {
+        setReportToEdit(report);
+        setEditForm({
+            location: report.location || '',
+            description: report.description || '',
+            imageUrl: report.imageUrl || null
+        });
+    };
+
+    const handleEditImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setEditForm((prev) => ({ ...prev, imageUrl: reader.result }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const confirmEditReport = async (e) => {
+        e.preventDefault();
+        if (!reportToEdit) return;
+
+        setIsUpdating(true);
+        try {
+            const userStr = sessionStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
+            const res = await fetch(`http://localhost:5000/api/reports/${reportToEdit.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: user ? user.id : undefined,
+                    location: editForm.location,
+                    description: editForm.description,
+                    imageUrl: editForm.imageUrl
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.message || 'Failed to update report');
+                return;
+            }
+
+            setHistory((prev) => prev.map((report) => {
+                if (report.id !== reportToEdit.id) return report;
+                return data.report ? { ...report, ...data.report } : {
+                    ...report,
+                    location: editForm.location,
+                    description: editForm.description,
+                    imageUrl: editForm.imageUrl
+                };
+            }));
+
+            setReportToEdit(null);
+        } catch (error) {
+            console.error('Error updating report:', error);
+            alert('Failed to update report');
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -361,6 +431,9 @@ const Reports = () => {
                                                     <button className="btn-icon view-btn" title="View Full Details">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                                     </button>
+                                                    <button className="btn-icon" title="Edit Report" onClick={() => openEditModal(report)}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                                    </button>
                                                     <button className="btn-icon" title="Delete Report" onClick={() => setReportToDelete(report.id)} style={{ color: '#dc2626' }}>
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                                     </button>
@@ -397,6 +470,60 @@ const Reports = () => {
                             <button onClick={() => setReportToDelete(null)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color, #ddd)', background: 'transparent', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
                             <button onClick={confirmDeleteReport} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid #b91c1c', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: '500' }}>Delete</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Report Modal */}
+            {reportToEdit && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setReportToEdit(null)}>
+                    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '92%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 1rem', color: 'var(--text-dark, #222)' }}>Edit Report</h3>
+
+                        <form onSubmit={confirmEditReport} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Issue Location</span>
+                                <input
+                                    type="text"
+                                    value={editForm.location}
+                                    onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
+                                    required
+                                    className="glass-input"
+                                />
+                            </label>
+
+                            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Description</span>
+                                <textarea
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                                    required
+                                    rows="4"
+                                    className="glass-input textarea"
+                                ></textarea>
+                            </label>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Photo (Optional)</span>
+                                <input type="file" accept="image/*" onChange={handleEditImageChange} />
+                                {editForm.imageUrl && (
+                                    <img
+                                        src={editForm.imageUrl}
+                                        alt="Updated evidence preview"
+                                        style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)' }}
+                                    />
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.3rem' }}>
+                                <button type="button" onClick={() => setReportToEdit(null)} style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color, #ddd)', background: 'transparent', cursor: 'pointer', fontWeight: '500' }}>
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={isUpdating || !editForm.location.trim() || !editForm.description.trim()} style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: '1px solid var(--primary-color, #386641)', background: 'var(--primary-color, #386641)', color: '#fff', cursor: 'pointer', fontWeight: '600', opacity: isUpdating ? 0.8 : 1 }}>
+                                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

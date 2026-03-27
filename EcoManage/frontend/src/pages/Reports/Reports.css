@@ -220,16 +220,21 @@
 }
 
 .input-with-icon .glass-input {
-    padding-left: 52px;
+    padding-left: 68px !important;
+    padding-inline-start: 68px !important;
 }
 
 .input-icon {
     position: absolute;
-    left: 20px;
+    left: 18px;
     top: 50%;
     transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
     color: var(--text-light);
     display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
 }
 

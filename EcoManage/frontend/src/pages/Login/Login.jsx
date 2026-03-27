@@ -49,7 +49,7 @@ const Login = () => {
                 sessionStorage.setItem('user', JSON.stringify(data.user));
 
                 setTimeout(() => {
-                    navigate('/dashboard');
+                    navigate('/');
                 }, 1000);
             } else {
                 showAlert(data.message || 'Login failed');

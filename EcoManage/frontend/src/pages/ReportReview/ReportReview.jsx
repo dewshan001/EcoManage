@@ -104,6 +104,14 @@ const ReportReview = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [taskToEdit, setTaskToEdit] = useState(null);
+  const [editTaskForm, setEditTaskForm] = useState({
+    priority: 'Medium',
+    scheduleDate: '',
+    workers: 4,
+    vehicleType: 'Compactor Truck'
+  });
+  const [isUpdatingTask, setIsUpdatingTask] = useState(false);
 
   const [taskForm, setTaskForm] = useState({
     priority: 'Medium',
@@ -182,6 +190,63 @@ const ReportReview = () => {
       alert('Failed to delete task');
     } finally {
       setTaskToDelete(null);
+    }
+  };
+
+  const openEditTaskModal = (task) => {
+    setTaskToEdit(task);
+    setEditTaskForm({
+      priority: task.priority || 'Medium',
+      scheduleDate: task.scheduleDate || '',
+      workers: task.workers || 4,
+      vehicleType: task.vehicleType || 'Compactor Truck'
+    });
+  };
+
+  const handleEditTaskChange = (field, value) => {
+    setEditTaskForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const confirmEditTask = async (e) => {
+    e.preventDefault();
+    if (!taskToEdit) return;
+
+    setIsUpdatingTask(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/tasks/${taskToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priority: editTaskForm.priority,
+          scheduleDate: editTaskForm.scheduleDate,
+          workers: editTaskForm.workers,
+          vehicleType: editTaskForm.vehicleType
+        })
+      });
+
+      if (res.ok) {
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskToEdit.id
+              ? {
+                  ...t,
+                  priority: editTaskForm.priority,
+                  scheduleDate: editTaskForm.scheduleDate,
+                  workers: editTaskForm.workers,
+                  vehicleType: editTaskForm.vehicleType
+                }
+              : t
+          )
+        );
+        setTaskToEdit(null);
+      } else {
+        alert('Failed to update task');
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Failed to update task');
+    } finally {
+      setIsUpdatingTask(false);
     }
   };
 
@@ -812,6 +877,13 @@ const ReportReview = () => {
                             Linked: <strong>{task.reportId}</strong>
                           </div>
                           <button
+                            onClick={() => openEditTaskModal(task)}
+                            title="Edit Task"
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#386641', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                          </button>
+                          <button
                             onClick={() => handleDeleteTask(task.id)}
                             title="Delete Task"
                             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
@@ -835,6 +907,79 @@ const ReportReview = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Task Modal */}
+      {taskToEdit && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setTaskToEdit(null)}>
+          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '92%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 1rem', color: 'var(--text-dark, #222)' }}>Edit Task</h3>
+
+            <form onSubmit={confirmEditTask} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Priority Level</span>
+                <select
+                  value={editTaskForm.priority}
+                  onChange={(e) => handleEditTaskChange('priority', e.target.value)}
+                  className="form-input"
+                  style={{ padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </select>
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Schedule Date</span>
+                <input
+                  type="date"
+                  value={editTaskForm.scheduleDate}
+                  onChange={(e) => handleEditTaskChange('scheduleDate', e.target.value)}
+                  required
+                  style={{ padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Required Workers</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={editTaskForm.workers}
+                  onChange={(e) => handleEditTaskChange('workers', e.target.value)}
+                  required
+                  style={{ padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Vehicle Type</span>
+                <select
+                  value={editTaskForm.vehicleType}
+                  onChange={(e) => handleEditTaskChange('vehicleType', e.target.value)}
+                  style={{ padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                >
+                  {VEHICLE_TYPES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.3rem' }}>
+                <button type="button" onClick={() => setTaskToEdit(null)} style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color, #ddd)', background: 'transparent', cursor: 'pointer', fontWeight: '500' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={isUpdatingTask || !editTaskForm.scheduleDate} style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: '1px solid var(--primary-color, #386641)', background: 'var(--primary-color, #386641)', color: '#fff', cursor: 'pointer', fontWeight: '600', opacity: isUpdatingTask ? 0.8 : 1 }}>
+                  {isUpdatingTask ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delete Task Confirmation Modal */}
       {taskToDelete && (
