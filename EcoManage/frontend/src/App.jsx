@@ -14,6 +14,7 @@ import Reports from './pages/Reports/Reports';
 import ReportReview from './pages/ReportReview/ReportReview';
 import Billing from './pages/Billing/Billing';
 import Settings from './pages/Settings/Settings';
+import UserManagement from './pages/UserManagement/UserManagement';
 
 // Redirects guests (not logged in) to the login page
 const ProtectedRoute = ({ children }) => {
@@ -101,7 +102,7 @@ const Navigation = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const isDashboardLayout = location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager';
+    const isDashboardLayout = location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager' || location.pathname === '/users';
 
     const navClass = scrolled && !isDashboardLayout ? 'glass-nav-active' : 'glass';
 
@@ -208,7 +209,10 @@ const Navigation = () => {
 
                         {/* Admin-only: Managers page */}
                         {user && user.role === 'Admin' && (
-                            <Link to="/register-manager" style={linkStyle('/register-manager')}>Managers</Link>
+                            <>
+                                <Link to="/register-manager" style={linkStyle('/register-manager')}>Managers</Link>
+                                <Link to="/users" style={linkStyle('/users')}>Users</Link>
+                            </>
                         )}
 
                         {/* Billing: visible for logged-in users */}
@@ -425,6 +429,7 @@ const LayoutWrapper = () => {
                     <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/register-manager" element={<ProtectedRoute><RegisterManager /></ProtectedRoute>} />
+                    <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
                 </Routes>
             </main>
         </div>

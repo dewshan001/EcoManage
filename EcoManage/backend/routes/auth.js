@@ -1,8 +1,22 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { getDB } = require('../db/database');
+const { logAuditAction } = require('../db/auditLog');
 
 const router = express.Router();
+
+async function requireAdmin(db, requestedBy) {
+    if (!requestedBy) {
+        return { ok: false, status: 400, message: 'requestedBy (admin user id) is required.' };
+    }
+
+    const adminUser = await db.get('SELECT id, role FROM Users WHERE id = ?', [requestedBy]);
+    if (!adminUser || adminUser.role !== 'Admin') {
+        return { ok: false, status: 403, message: 'Admin access required.' };
+    }
+
+    return { ok: true };
+}
 
 // User Registration Route
 router.post('/register', async (req, res) => {
@@ -347,6 +361,215 @@ router.get('/residents', async (req, res) => {
         res.status(200).json({ residents });
     } catch (error) {
         console.error('Fetch residents error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin-only: Get all Users (currently supports Resident role management)
+router.get('/users', async (req, res) => {
+    try {
+        const { role, requestedBy, search, limit = 100, offset = 0 } = req.query;
+        const db = getDB();
+
+        const adminCheck = await requireAdmin(db, requestedBy);
+        if (!adminCheck.ok) {
+            return res.status(adminCheck.status).json({ message: adminCheck.message });
+        }
+
+        const requestedRole = role || 'Resident';
+
+        // For safety, this endpoint is intentionally limited to Residents for now
+        if (requestedRole !== 'Resident') {
+            return res.status(400).json({ message: "Only role='Resident' is supported." });
+        }
+
+        // Build WHERE clause for search
+        let whereClause = 'role = ?';
+        let params = [requestedRole];
+        
+        if (search) {
+            whereClause += ' AND (fullName LIKE ? OR email LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm);
+        }
+
+        // Get total count
+        const countResult = await db.get(`SELECT COUNT(*) as total FROM Users WHERE ${whereClause}`, params);
+        const total = countResult?.total || 0;
+
+        // Get paginated results
+        const users = await db.all(
+            `SELECT id, fullName, email, role, contactNumber, address, createdAt FROM Users WHERE ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
+            [...params, parseInt(limit), parseInt(offset)]
+        );
+
+        res.status(200).json({ 
+            users,
+            pagination: {
+                total,
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                page: Math.floor(parseInt(offset) / parseInt(limit)) + 1
+            }
+        });
+    } catch (error) {
+        console.error('Fetch users error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin-only: Create a new user (Resident only)
+router.post('/users', async (req, res) => {
+    try {
+        const { requestedBy, fullName, email, password, contactNumber, address } = req.body;
+
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: 'Full name, email, and password are required.' });
+        }
+
+        const db = getDB();
+        const adminCheck = await requireAdmin(db, requestedBy);
+        if (!adminCheck.ok) {
+            return res.status(adminCheck.status).json({ message: adminCheck.message });
+        }
+
+        const existingUser = await db.get('SELECT id FROM Users WHERE email = ?', [email]);
+        if (existingUser) {
+            return res.status(409).json({ message: 'User with this email already exists.' });
+        }
+
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        const result = await db.run(
+            `INSERT INTO Users (fullName, email, passwordHash, role, contactNumber, address) VALUES (?, ?, ?, 'Resident', ?, ?)`,
+            [fullName, email, passwordHash, contactNumber || null, address || null]
+        );
+
+        // Log audit action
+        await logAuditAction(
+            requestedBy,
+            'CREATE_USER',
+            'RESIDENT',
+            result.lastID,
+            { fullName, email, contactNumber, address }
+        );
+
+        res.status(201).json({
+            message: 'Resident created successfully!',
+            user: {
+                id: result.lastID,
+                fullName,
+                email,
+                role: 'Resident',
+                contactNumber: contactNumber || null,
+                address: address || null
+            }
+        });
+    } catch (error) {
+        console.error('Create user error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin-only: Update a user (Resident only)
+router.put('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { requestedBy, fullName, email, contactNumber, address } = req.body;
+
+        if (!fullName || !email) {
+            return res.status(400).json({ message: 'Full name and email are required.' });
+        }
+
+        const db = getDB();
+        const adminCheck = await requireAdmin(db, requestedBy);
+        if (!adminCheck.ok) {
+            return res.status(adminCheck.status).json({ message: adminCheck.message });
+        }
+
+        const user = await db.get('SELECT id, role, email FROM Users WHERE id = ?', [id]);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        if (user.role !== 'Resident') {
+            return res.status(403).json({ message: 'Only Resident users can be updated from this endpoint.' });
+        }
+
+        // Check if new email is already in use by another user
+        if (email !== user.email) {
+            const existingUser = await db.get('SELECT id FROM Users WHERE email = ? AND id != ?', [email, id]);
+            if (existingUser) {
+                return res.status(409).json({ message: 'Email is already in use by another user.' });
+            }
+        }
+
+        await db.run(
+            `UPDATE Users SET fullName = ?, email = ?, contactNumber = ?, address = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            [fullName, email, contactNumber || null, address || null, id]
+        );
+
+        // Log audit action
+        await logAuditAction(
+            requestedBy,
+            'UPDATE_USER',
+            'RESIDENT',
+            id,
+            { fullName, email, contactNumber, address }
+        );
+
+        res.status(200).json({
+            message: 'User updated successfully!',
+            user: {
+                id,
+                fullName,
+                email,
+                contactNumber: contactNumber || null,
+                address: address || null
+            }
+        });
+    } catch (error) {
+        console.error('Update user error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Admin-only: Delete a user (Resident only)
+router.delete('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const requestedBy = req.query.requestedBy || req.body?.requestedBy;
+
+        const db = getDB();
+        const adminCheck = await requireAdmin(db, requestedBy);
+        if (!adminCheck.ok) {
+            return res.status(adminCheck.status).json({ message: adminCheck.message });
+        }
+
+        const user = await db.get('SELECT id, role FROM Users WHERE id = ?', [id]);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        if (user.role !== 'Resident') {
+            return res.status(403).json({ message: 'Only Resident users can be deleted from this page.' });
+        }
+
+        await db.run('DELETE FROM Users WHERE id = ?', [id]);
+
+        // Log audit action
+        await logAuditAction(
+            requestedBy,
+            'DELETE_USER',
+            'RESIDENT',
+            id,
+            { deletedUser: user }
+        );
+
+        res.status(200).json({ message: 'User deleted successfully.' });
+    } catch (error) {
+        console.error('Delete user error:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
