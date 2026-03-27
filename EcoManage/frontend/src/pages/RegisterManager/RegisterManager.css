@@ -411,6 +411,31 @@
     font-weight: 600;
 }
 
+.rm-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rm-btn-edit {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.rm-btn-edit:hover {
+    background: #ecfeff;
+    color: #0e7490;
+}
+
 .rm-btn-delete {
     background: none;
     border: none;
@@ -602,6 +627,36 @@
     display: flex;
     gap: 10px;
     justify-content: center;
+}
+
+.rm-modal-box-edit {
+    max-width: 520px;
+    text-align: left;
+    padding: 28px;
+}
+
+.rm-edit-title {
+    margin: 0;
+    color: var(--text-dark, #2c352b);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.rm-edit-sub {
+    margin: 6px 0 20px;
+    font-size: 0.9rem;
+    color: var(--text-light, #768074);
+}
+
+.rm-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rm-edit-form .rm-modal-actions {
+    justify-content: flex-end;
+    margin-top: 8px;
 }
 
 .rm-btn-danger {

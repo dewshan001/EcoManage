@@ -82,6 +82,13 @@
     text-align: left;
 }
 
+.auth-field-warning {
+    margin-top: -2px;
+    font-size: 0.8rem;
+    color: #dc2626;
+    line-height: 1.35;
+}
+
 .password-label-row {
     display: flex;
     justify-content: space-between;

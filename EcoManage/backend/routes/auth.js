@@ -8,16 +8,27 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
+        const normalizedFullName = (fullName || '').trim();
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const passwordRule = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
 
         // 1. Basic Validation
-        if (!fullName || !email || !password) {
+        if (!normalizedFullName || !normalizedEmail || !password) {
             return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        if (!normalizedEmail.endsWith('@gmail.com')) {
+            return res.status(400).json({ message: 'Email must be a @gmail.com address.' });
+        }
+
+        if (!passwordRule.test(password)) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters and include 1 uppercase letter and 1 symbol.' });
         }
 
         const db = getDB();
 
         // 2. Check if user already exists
-        const existingUser = await db.get('SELECT * FROM Users WHERE email = ?', [email]);
+        const existingUser = await db.get('SELECT * FROM Users WHERE email = ?', [normalizedEmail]);
         if (existingUser) {
             return res.status(409).json({ message: 'User with this email already exists.' });
         }
@@ -29,7 +40,7 @@ router.post('/register', async (req, res) => {
         // 4. Insert new user into database
         const result = await db.run(
             `INSERT INTO Users (fullName, email, passwordHash) VALUES (?, ?, ?)`,
-            [fullName, email, passwordHash]
+            [normalizedFullName, normalizedEmail, passwordHash]
         );
 
         // 5. Send success response
@@ -37,8 +48,8 @@ router.post('/register', async (req, res) => {
             message: 'User registered successfully!',
             user: {
                 id: result.lastID,
-                fullName,
-                email,
+                fullName: normalizedFullName,
+                email: normalizedEmail,
                 role: 'Resident'
             }
         });
@@ -223,6 +234,60 @@ router.delete('/managers/:id', async (req, res) => {
         res.status(200).json({ message: 'Manager removed successfully.' });
     } catch (error) {
         console.error('Delete manager error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+// Update a Garbage Manager (Admin only)
+router.put('/managers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fullName, email, contactNumber, address } = req.body;
+
+        const trimmedFullName = (fullName || '').trim();
+        const trimmedEmail = (email || '').trim();
+        const trimmedContact = (contactNumber || '').trim();
+        const trimmedAddress = (address || '').trim();
+
+        if (!trimmedFullName || !trimmedEmail) {
+            return res.status(400).json({ message: 'Full name and email are required.' });
+        }
+
+        const db = getDB();
+        const manager = await db.get('SELECT * FROM Users WHERE id = ? AND role = ?', [id, 'GarbageManager']);
+        if (!manager) {
+            return res.status(404).json({ message: 'Garbage Manager not found.' });
+        }
+
+        const emailOwner = await db.get('SELECT id FROM Users WHERE email = ? AND id != ?', [trimmedEmail, id]);
+        if (emailOwner) {
+            return res.status(409).json({ message: 'A user with this email already exists.' });
+        }
+
+        await db.run(
+            `UPDATE Users
+             SET fullName = ?,
+                 email = ?,
+                 contactNumber = ?,
+                 address = ?,
+                 updatedAt = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [trimmedFullName, trimmedEmail, trimmedContact || null, trimmedAddress || null, id]
+        );
+
+        const updatedManager = await db.get(
+            `SELECT id, fullName, email, role, contactNumber, address, createdAt, updatedAt
+             FROM Users
+             WHERE id = ? AND role = 'GarbageManager'`,
+            [id]
+        );
+
+        res.status(200).json({
+            message: 'Manager updated successfully.',
+            manager: updatedManager
+        });
+    } catch (error) {
+        console.error('Update manager error:', error);
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
