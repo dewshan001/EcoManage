@@ -33,7 +33,6 @@ const validatePassword = (password) => {
 
 const NAV = [
     { key: 'dashboard', icon: '📊', label: 'User Dashboard', desc: 'Overview of all active users and accounts' },
-    { key: 'roster', icon: '👥', label: 'Resident Roster', desc: 'Detailed view of all registered residents' },
 ];
 
 const UserManagement = () => {

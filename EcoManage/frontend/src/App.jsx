@@ -391,6 +391,11 @@ const Navigation = () => {
 
 const LayoutWrapper = () => {
     const location = useLocation();
+    const isDashboardLayout =
+        location.pathname === '/vehicles' ||
+        location.pathname === '/workers' ||
+        location.pathname === '/register-manager' ||
+        location.pathname === '/users';
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -398,9 +403,9 @@ const LayoutWrapper = () => {
             {/* paddingTop ensures content isn't hidden under fixed nav */}
             <main style={{
                 flex: 1,
-                paddingTop: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? '0' : '72px',
-                height: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? '100vh' : 'auto',
-                overflow: (location.pathname === '/vehicles' || location.pathname === '/workers' || location.pathname === '/register-manager') ? 'hidden' : 'visible',
+                paddingTop: isDashboardLayout ? '0' : '72px',
+                height: isDashboardLayout ? '100vh' : 'auto',
+                overflow: isDashboardLayout ? 'hidden' : 'visible',
                 msOverflowStyle: location.pathname === '/' ? 'none' : 'auto',
                 scrollbarWidth: location.pathname === '/' ? 'none' : 'auto'
             }}>
