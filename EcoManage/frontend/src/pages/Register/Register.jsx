@@ -2,6 +2,27 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Login/Login.css'; // Reusing the authentication base styles
 
+const PASSWORD_RULE = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
+const validateForm = (data) => {
+    const errors = {};
+    const normalizedEmail = (data.email || '').trim().toLowerCase();
+
+    if (normalizedEmail && !normalizedEmail.endsWith('@gmail.com')) {
+        errors.email = 'Email must be a @gmail.com address.';
+    }
+
+    if (data.password && !PASSWORD_RULE.test(data.password)) {
+        errors.password = 'Password must be at least 8 characters and include 1 uppercase letter and 1 symbol.';
+    }
+
+    if (data.confirmPassword && data.password !== data.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match.';
+    }
+
+    return errors;
+};
+
 const Register = () => {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -9,6 +30,7 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+    const [fieldErrors, setFieldErrors] = useState({});
     const [alertConfig, setAlertConfig] = useState({ show: false, message: '', type: '' });
     const navigate = useNavigate();
 
@@ -21,19 +43,26 @@ const Register = () => {
     };
 
     const handleChange = (e) => {
-        setFormData({
+        const updatedFormData = {
             ...formData,
             [e.target.name]: e.target.value
-        });
+        };
+        setFormData(updatedFormData);
+        setFieldErrors(validateForm(updatedFormData));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (formData.password !== formData.confirmPassword) {
-            showAlert('Passwords do not match');
+        const errors = validateForm(formData);
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            showAlert('Please fix the highlighted fields.');
             return;
         }
+
+        const normalizedFullName = formData.fullName.trim();
+        const normalizedEmail = formData.email.trim().toLowerCase();
 
         try {
             const response = await fetch('http://localhost:5000/api/auth/register', {
@@ -42,8 +71,8 @@ const Register = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    fullName: formData.fullName,
-                    email: formData.email,
+                    fullName: normalizedFullName,
+                    email: normalizedEmail,
                     password: formData.password
                 })
             });
@@ -104,11 +133,12 @@ const Register = () => {
                                 type="email"
                                 id="email"
                                 name="email"
-                                placeholder="you@example.com"
+                                placeholder="you@gmail.com"
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
                             />
+                            {fieldErrors.email && <small className="auth-field-warning">{fieldErrors.email}</small>}
                         </div>
 
                         <div className="form-group">
@@ -122,6 +152,7 @@ const Register = () => {
                                 onChange={handleChange}
                                 required
                             />
+                            {fieldErrors.password && <small className="auth-field-warning">{fieldErrors.password}</small>}
                         </div>
 
                         <div className="form-group">
@@ -135,6 +166,7 @@ const Register = () => {
                                 onChange={handleChange}
                                 required
                             />
+                            {fieldErrors.confirmPassword && <small className="auth-field-warning">{fieldErrors.confirmPassword}</small>}
                         </div>
 
                         <button type="submit" className="btn-primary auth-submit">
