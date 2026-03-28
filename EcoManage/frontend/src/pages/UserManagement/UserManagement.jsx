@@ -342,38 +342,70 @@ const UserManagement = () => {
                                 </div>
                             </div>
                             <div className="um-panel-content custom-scrollbar">
-                                <div className="um-worker-list" style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:'20px'}}>
-                                    {filteredUsers.map(user => (
-                                        <div key={user.id} className="um-worker-card" style={{flexDirection:'column', alignItems:'flex-start', position: 'relative'}}>
-                                            <div style={{display:'flex', width:'100%', gap:'16px'}}>
-                                                <div className="um-worker-avatar">
-                                                    {user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() || 'U'}
-                                                </div>
-                                                <div className="um-worker-info">
-                                                    <div className="um-worker-name-row">
-                                                        <h4 title={user.fullName}>{user.fullName}</h4>
-                                                    </div>
-                                                    <div className="um-worker-meta" style={{marginBottom:'4px'}}>{user.email}</div>
-                                                    <div className="um-status-badge status-duty" style={{display:'inline-block'}}>{user.role || 'Resident'}</div>
-                                                </div>
-                                            </div>
-                                            <div style={{ width: '100%', borderTop: '1px solid #eee', paddingTop: '12px', marginTop: '4px', fontSize: '0.85rem', color: '#666' }}>
-                                                <div><strong>ID:</strong> {user.id}</div>
-                                                <div><strong>Contact:</strong> {user.contactNumber || '—'}</div>
-                                                <div style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}><strong>Address:</strong> {user.address || '—'}</div>
-                                            </div>
-                                            <div style={{position:'absolute', top:'16px', right:'16px', display:'flex', gap:'8px'}}>
-                                                <button onClick={() => setEditingUser(user)} style={{background:'transparent', border:'none', cursor:'pointer', color:'#0284c7'}}><EditIcon /></button>
-                                                <button onClick={() => setUserToDelete(user.id)} style={{background:'transparent', border:'none', cursor:'pointer', color:'#dc2626'}}><TrashIcon /></button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {filteredUsers.length === 0 && (
-                                        <div style={{gridColumn:'1 / -1', textAlign:'center', color:'#9ca3af', padding:'40px'}}>
-                                            No residents found
-                                        </div>
-                                    )}
-                                </div>
+                                {filteredUsers.length > 0 ? (
+                                    <table className="um-roster-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Resident</th>
+                                                <th>Email</th>
+                                                <th>Contact</th>
+                                                <th>Address</th>
+                                                <th>Role</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredUsers.map(user => (
+                                                <tr key={user.id}>
+                                                    <td>
+                                                        <div className="um-table-worker">
+                                                            <div className="um-worker-avatar">
+                                                                {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
+                                                            </div>
+                                                            <div className="um-table-cell-stack">
+                                                                <span>ID: {user.id}</span>
+                                                                <strong title={user.fullName}>{user.fullName}</strong>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{user.email}</td>
+                                                    <td>{user.contactNumber || '—'}</td>
+                                                    <td>{user.address || '—'}</td>
+                                                    <td>
+                                                        <div className="um-status-badge status-duty" style={{ display: 'inline-block' }}>
+                                                            {user.role || 'Resident'}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <button
+                                                                className="um-btn-delete"
+                                                                onClick={() => setEditingUser(user)}
+                                                                style={{ color: '#0284c7' }}
+                                                                aria-label={`Edit ${user.fullName}`}
+                                                                title="Edit"
+                                                            >
+                                                                <EditIcon />
+                                                            </button>
+                                                            <button
+                                                                className="um-btn-delete"
+                                                                onClick={() => setUserToDelete(user.id)}
+                                                                aria-label={`Delete ${user.fullName}`}
+                                                                title="Delete"
+                                                            >
+                                                                <TrashIcon />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>
+                                        No residents found
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
