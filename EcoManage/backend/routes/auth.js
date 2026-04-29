@@ -25,6 +25,7 @@ router.post('/register', async (req, res) => {
         const normalizedFullName = (fullName || '').trim();
         const normalizedEmail = (email || '').trim().toLowerCase();
         const passwordRule = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+        const fullNameRule = /^[\p{L} ]+$/u;
 
         // 1. Basic Validation
         if (!normalizedFullName || !normalizedEmail || !password) {
@@ -33,6 +34,10 @@ router.post('/register', async (req, res) => {
 
         if (!normalizedEmail.endsWith('@gmail.com')) {
             return res.status(400).json({ message: 'Email must be a @gmail.com address.' });
+        }
+
+        if (!fullNameRule.test(normalizedFullName)) {
+            return res.status(400).json({ message: 'Full name can contain only letters and spaces.' });
         }
 
         if (!passwordRule.test(password)) {
@@ -378,7 +383,7 @@ router.get('/workers', async (req, res) => {
 router.put('/workers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, skill, role } = req.body;
+        const { fullName, email, status, skill, role } = req.body;
 
         const db = getDB();
 
@@ -387,12 +392,49 @@ router.put('/workers/:id', async (req, res) => {
             return res.status(404).json({ message: 'Worker not found.' });
         }
 
+        const normalizedName = typeof fullName === 'string' ? fullName.trim() : worker.fullName;
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : worker.email;
+
+        if (!normalizedName || !normalizedEmail) {
+            return res.status(400).json({ message: 'Full name and email are required.' });
+        }
+
+        const existingWorkerWithEmail = await db.get(
+            'SELECT id FROM Workers WHERE email = ? AND id != ?',
+            [normalizedEmail, id]
+        );
+        if (existingWorkerWithEmail) {
+            return res.status(409).json({ message: 'A worker with this email already exists.' });
+        }
+
         await db.run(
-            `UPDATE Workers SET status = ?, skill = ?, role = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-            [status || worker.status, skill || worker.skill, role || worker.role, id]
+            `UPDATE Workers
+             SET fullName = ?,
+                 email = ?,
+                 status = ?,
+                 skill = ?,
+                 role = ?,
+                 updatedAt = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [
+                normalizedName,
+                normalizedEmail,
+                status || worker.status,
+                skill || worker.skill,
+                role || worker.role,
+                id
+            ]
         );
 
-        res.status(200).json({ message: 'Worker updated successfully.' });
+        const updatedWorker = await db.get(
+            'SELECT id, fullName as name, email, role, skill, status FROM Workers WHERE id = ?',
+            [id]
+        );
+
+        res.status(200).json({
+            message: 'Worker updated successfully.',
+            worker: updatedWorker
+        });
     } catch (error) {
         console.error('Update worker error:', error);
         res.status(500).json({ message: 'Internal server error.' });

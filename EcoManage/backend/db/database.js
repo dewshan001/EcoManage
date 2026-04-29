@@ -1,6 +1,52 @@
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 const path = require('path');
+const fs = require('fs');
+
+const DB_FILE_PATH = process.env.ECOMANAGE_DB_PATH
+    ? path.resolve(process.env.ECOMANAGE_DB_PATH)
+    : path.resolve(__dirname, '..', '..', 'ecomanage.db');
+const LEGACY_DB_FILE_PATH = path.resolve(__dirname, '..', 'ecomanage.db');
+
+async function maybeMigrateLegacyDatabase() {
+    if (DB_FILE_PATH === LEGACY_DB_FILE_PATH) {
+        return;
+    }
+
+    if (!fs.existsSync(LEGACY_DB_FILE_PATH)) {
+        return;
+    }
+
+    const canonicalDb = await open({
+        filename: DB_FILE_PATH,
+        driver: sqlite3.Database
+    });
+
+    const canonicalUsersTable = await canonicalDb.get(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Users'"
+    );
+    await canonicalDb.close();
+
+    if (canonicalUsersTable) {
+        return;
+    }
+
+    const legacyDb = await open({
+        filename: LEGACY_DB_FILE_PATH,
+        driver: sqlite3.Database
+    });
+    const legacyUsersTable = await legacyDb.get(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Users'"
+    );
+    await legacyDb.close();
+
+    if (!legacyUsersTable) {
+        return;
+    }
+
+    fs.copyFileSync(LEGACY_DB_FILE_PATH, DB_FILE_PATH);
+    console.log(`Migrated legacy database from ${LEGACY_DB_FILE_PATH} to ${DB_FILE_PATH}`);
+}
 
 // Global database variable
 let db;
@@ -8,12 +54,15 @@ let db;
 // Function to initialize the database
 async function initDB() {
     try {
+        await maybeMigrateLegacyDatabase();
+
         db = await open({
-            filename: path.join(__dirname, '../ecomanage.db'),
+            filename: DB_FILE_PATH,
             driver: sqlite3.Database
         });
 
         console.log('Connected to the SQLite database.');
+        console.log(`Using database file: ${DB_FILE_PATH}`);
 
         // Initialize tables
         await createTables();

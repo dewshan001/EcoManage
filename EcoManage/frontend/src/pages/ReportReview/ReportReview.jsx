@@ -95,6 +95,15 @@ const VEHICLE_TYPES = ['Compactor Truck', 'Mini Loader', 'Roll-Off Truck', 'Flat
 // Remove mock data, we will fetch from backend
 
 const ReportReview = () => {
+  const getTomorrowDateString = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  const minScheduleDate = getTomorrowDateString();
+
   const [activeMode, setActiveMode] = useState('review'); // 'review' | 'tasks' | 'dashboard'
   const [complaints, setComplaints] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -302,9 +311,15 @@ const ReportReview = () => {
     e.preventDefault();
     if (!selectedComplaint) return;
 
+    const { decision, taskId, priority, scheduleDate, workers, vehicleType } = taskForm;
+
+    if (activeMode === 'tasks' && (!scheduleDate || scheduleDate < minScheduleDate)) {
+      alert('Schedule date must be a future date.');
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const { decision, taskId, priority, scheduleDate, workers, vehicleType } = taskForm;
     let payload = {};
 
     if (activeMode === 'review') {
@@ -657,6 +672,7 @@ const ReportReview = () => {
                                     className="form-input"
                                     value={taskForm.scheduleDate}
                                     onChange={(e) => handleTaskChange('scheduleDate', e.target.value)}
+                                    min={minScheduleDate}
                                     required
                                   />
                                 </div>

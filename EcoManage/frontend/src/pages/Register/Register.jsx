@@ -3,10 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../Login/Login.css'; // Reusing the authentication base styles
 
 const PASSWORD_RULE = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+const FULL_NAME_RULE = /^[\p{L} ]+$/u;
 
 const validateForm = (data) => {
     const errors = {};
+    const normalizedFullName = (data.fullName || '').trim();
     const normalizedEmail = (data.email || '').trim().toLowerCase();
+
+    if (!normalizedFullName) {
+        errors.fullName = 'Full name is required.';
+    } else if (!FULL_NAME_RULE.test(normalizedFullName)) {
+        errors.fullName = 'Full name can contain only letters and spaces.';
+    }
 
     if (normalizedEmail && !normalizedEmail.endsWith('@gmail.com')) {
         errors.email = 'Email must be a @gmail.com address.';
@@ -125,6 +133,7 @@ const Register = () => {
                                 onChange={handleChange}
                                 required
                             />
+                            {fieldErrors.fullName && <small className="auth-field-warning">{fieldErrors.fullName}</small>}
                         </div>
 
                         <div className="form-group">

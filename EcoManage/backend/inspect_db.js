@@ -2,9 +2,13 @@ const { open } = require('sqlite');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
+const DB_FILE_PATH = process.env.ECOMANAGE_DB_PATH
+    ? path.resolve(process.env.ECOMANAGE_DB_PATH)
+    : path.resolve(__dirname, '..', 'ecomanage.db');
+
 (async () => {
     try {
-        const db = await open({ filename: path.join(__dirname, 'ecomanage.db'), driver: sqlite3.Database });
+        const db = await open({ filename: DB_FILE_PATH, driver: sqlite3.Database });
 
         const users = await db.all("SELECT id, fullName, email, role, createdAt FROM Users ORDER BY createdAt DESC");
         console.log('Users:', users);
