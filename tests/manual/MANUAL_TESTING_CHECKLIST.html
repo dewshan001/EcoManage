@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoManage - Manual Testing Checklist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-header:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        }
+        
+        .toggle-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+        
+        .section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .section-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .section.expanded .section-content {
+            display: block;
+        }
+        
+        .test-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+        }
+        
+        .test-item:last-child {
+            border-bottom: none;
+        }
+        
+        .test-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .checkbox-wrapper {
+            margin-right: 15px;
+            margin-top: 2px;
+        }
+        
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .test-details {
+            flex: 1;
+        }
+        
+        .test-id {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 0.95em;
+            margin-bottom: 5px;
+        }
+        
+        .test-description {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        
+        .test-data {
+            color: #666;
+            font-size: 0.85em;
+            background: white;
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 5px;
+            overflow-x: auto;
+        }
+        
+        .test-item.completed .test-description {
+            color: #999;
+            text-decoration: line-through;
+        }
+        
+        .test-item.completed .test-id {
+            color: #999;
+        }
+        
+        .priority {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .priority.high {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .priority.medium {
+            background: #ffa500;
+            color: white;
+        }
+        
+        .priority.low {
+            background: #51cf66;
+            color: white;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-box h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-box p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        .export-data {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .button-group {
+                display: none;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗑️ EcoManage</h1>
+            <p>Manual Testing Checklist - Comprehensive Test Suite</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Last Updated: April 29, 2026 | Version 1.0</p>
+        </header>
+        
+        <div class="content">
+            <div class="stats">
+                <div class="stat-box">
+                    <h3 id="total-tests">0</h3>
+                    <p>Total Tests</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="completed-tests">0</h3>
+                    <p>Completed</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="remaining-tests">0</h3>
+                    <p>Remaining</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="progress-percent">0%</h3>
+                    <p>Progress</p>
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-primary" onclick="expandAll()">Expand All</button>
+                <button class="btn-secondary" onclick="collapseAll()">Collapse All</button>
+                <button class="btn-secondary" onclick="markAllComplete()">Mark All Complete</button>
+                <button class="btn-secondary" onclick="resetAll()">Reset All</button>
+                <button class="btn-primary" onclick="exportResults()">Export Results</button>
+                <button class="btn-secondary" onclick="window.print()">Print Report</button>
+            </div>
+            
+            <!-- Authentication Tests -->\n            <div class="section expanded">\n                <div class="section-header" onclick="toggleSection(this)">\n                    <span>🔐 Backend Unit Tests - Authentication & User Management</span>\n                    <span class="toggle-icon">▼</span>\n                </div>\n                <div class="section-content">\n                    <div class="test-item">\n                        <div class="checkbox-wrapper"><input type="checkbox" onchange="updateStats()"></div>\n                        <div class="test-details">\n                            <div class="test-id">AUTH-01: Valid Resident Registration</div>\n                            <div class="test-description">Register new resident with valid Gmail and strong password</div>\n                            <div class="test-data">Input: name=\"John Doe\", email=\"john@gmail.com\", password=\"Password123!\"</div>\n                            <span class="priority high">HIGH</span>\n                        </div>\n                    </div>\n                    <div class="test-item">\n                        <div class="checkbox-wrapper"><input type="checkbox" onchange="updateStats()"></div>\n                        <div class="test-details">\n                            <div class="test-id">AUTH-02: Invalid Email (Non-Gmail)</div>\n                            <div class="test-description">Reject registration with non-Gmail email address</div>\n                            <div class="test-data">Input: email=\"jane@yahoo.com\"</div>\n                            <span class="priority high">HIGH</span>\n                        </div>\n                    </div>\n                    <div class="test-item">\n                        <div class="checkbox-wrapper"><input type="checkbox" onchange="updateStats()"></div>\n                        <div class="test-details">\n                            <div class="test-id">AUTH-03: Weak Password Rejection</div>\n                            <div class="test-description">Reject password without uppercase or special character</div>\n                            <div class="test-data">Input: password=\"password123!\" (missing uppercase)</div>\n                            <span class="priority high">HIGH</span>\n                        </div>\n                    </div>\n                    <div class="test-item">\n                        <div class="checkbox-wrapper"><input type="checkbox" onchange="updateStats()"></div>\n                        <div class="test-details">\n                            <div class="test-id">AUTH-04: Duplicate Email Prevention</div>\n                            <div class=\"test-description\">Reject duplicate email registration</div>\n                            <div class=\"test-data\">Action: Try registering same email twice</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">AUTH-06: Valid Login</div>\n                            <div class=\"test-description\">Successfully login with correct credentials</div>\n                            <div class=\"test-data\">Input: email=\"john@gmail.com\", password=\"Password123!\"</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">AUTH-07: Incorrect Password Rejection</div>\n                            <div class=\"test-description\">Reject login with wrong password</div>\n                            <div class=\"test-data\">Input: correct email, wrong password</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">AUTH-10: Profile Update</div>\n                            <div class=\"test-description\">Update user profile with new name and password</div>\n                            <div class=\"test-data\">Action: Change name and password successfully</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">AUTH-12: Register Manager (Admin Only)</div>\n                            <div class=\"test-description\">Admin can register new manager</div>\n                            <div class=\"test-data\">Role: Admin, Action: Register manager with contact number</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">AUTH-13: Manager Registration Denied (Non-Admin)</div>\n                            <div class=\"test-description\">Non-admin cannot register manager</div>\n                            <div class=\"test-data\">Role: Resident, Action: Try to register manager → 403 Forbidden</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Reports Tests -->\n            <div class=\"section expanded\">\n                <div class=\"section-header\" onclick=\"toggleSection(this)\">\n                    <span>📋 Backend Unit Tests - Reports Management</span>\n                    <span class=\"toggle-icon\">▼</span>\n                </div>\n                <div class=\"section-content\">\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-01: Create Report</div>\n                            <div class=\"test-description\">Resident submits new report with location and description</div>\n                            <div class=\"test-data\">Input: location=\"Block A\", description=\"Trash bin\", image URL</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-02: Missing Description Validation</div>\n                            <div class=\"test-description\">Reject report without required description field</div>\n                            <div class=\"test-data\">Input: location only (missing description)</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-03: Admin View All Reports</div>\n                            <div class=\"test-description\">Admin can view all submitted reports with resident names</div>\n                            <div class=\"test-data\">Action: Admin GET /reports → List of all reports</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-04: Resident View Own Reports</div>\n                            <div class=\"test-description\">Resident can only view their own submitted reports</div>\n                            <div class=\"test-data\">Query: ?userId=1 → Only resident 1's reports</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-05: Admin Approve Report</div>\n                            <div class=\"test-description\">Admin approves report and assigns priority and schedule date</div>\n                            <div class=\"test-data\">Action: Update status to \"Approved\", set priority, schedule date</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-06: Resident Edit Own Report</div>\n                            <div class=\"test-description\">Resident can edit location and description of own pending report</div>\n                            <div class=\"test-data\">Action: Update location and description before approval</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">REP-07: Authorization Check</div>\n                            <div class=\"test-description\">Resident cannot edit another resident's report</div>\n                            <div class=\"test-data\">Action: Try editing other user's report → 403 Forbidden</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Resident Workflow Tests -->\n            <div class=\"section expanded\">\n                <div class=\"section-header\" onclick=\"toggleSection(this)\">\n                    <span>👤 System Integration Tests - Resident Workflows</span>\n                    <span class=\"toggle-icon\">▼</span>\n                </div>\n                <div class=\"section-content\">\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-01: Registration & Login Flow</div>\n                            <div class=\"test-description\">Complete resident registration and login workflow</div>\n                            <div class=\"test-data\">Step 1: Register → Step 2: Verify DB → Step 3: Login → Step 4: Verify Session</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-02: Report Submission to Approval</div>\n                            <div class=\"test-description\">End-to-end: Submit report → Admin reviews → Approval</div>\n                            <div class=\"test-data\">Step 1: Resident submits → Step 2: Admin reviews → Step 3: Approve with priority</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-03: Task Creation & Completion</div>\n                            <div class=\"test-description\">Auto-create task on approval, track to completion</div>\n                            <div class=\"test-data\">Auto-link task ID, update status progression, report auto-updates to resolved</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-04: Invoice Generation & Display</div>\n                            <div class=\"test-description\">Create invoice from completed task, resident sees bill</div>\n                            <div class=\"test-data\">Admin creates invoice → Task status: Pending Payment → Resident views in billing</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-05: Payment Processing</div>\n                            <div class=\"test-description\">Resident pays invoice, statuses auto-update</div>\n                            <div class=\"test-data\">Mark paid → Invoice: Paid → Task: Payment Completed → Report: Resolved</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-09: Complete Resident Journey</div>\n                            <div class=\"test-description\">Full workflow: Register → Report → Approval → Task → Invoice → Payment</div>\n                            <div class=\"test-data\">End-to-end test verifying all integrations and data consistency</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Admin Workflow Tests -->\n            <div class=\"section expanded\">\n                <div class=\"section-header\" onclick=\"toggleSection(this)\">\n                    <span>👨‍💼 System Integration Tests - Admin Workflows</span>\n                    <span class=\"toggle-icon\">▼</span>\n                </div>\n                <div class=\"section-content\">\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-11: Manager Lifecycle (CRUD)</div>\n                            <div class=\"test-description\">Create, read, update, delete manager operations</div>\n                            <div class=\"test-data\">Register → List → Update details → Delete</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-12: Worker Management & Assignment</div>\n                            <div class=\"test-description\">Register workers and assign to tasks</div>\n                            <div class=\"test-data\">Register worker → List workers → Assign to task → Verify assignment</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-13: Fleet Management</div>\n                            <div class=\"test-description\">Register vehicles, track status, maintenance</div>\n                            <div class=\"test-data\">Register 3+ vehicles → Update status/fuel/maintenance → Track assignments</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-14: Billing Dashboard Operations</div>\n                            <div class=\"test-description\">Create multiple invoices, process payments</div>\n                            <div class=\"test-data\">Create 3 invoices (different types) → Process payments → Verify revenue tracking</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-16: Role-Based Access Control</div>\n                            <div class=\"test-description\">Verify permission enforcement for different roles</div>\n                            <div class=\"test-data\">Resident → Denied (403), Manager → Denied (403), Admin → Allowed (200)</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-17: Rate Limiting</div>\n                            <div class=\"test-description\">Verify rate limiting on protected endpoints</div>\n                            <div class=\"test-data\">Send 11+ rapid requests → First 10 allowed, 11+ → 429 Too Many Requests</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Performance Tests -->\n            <div class=\"section expanded\">\n                <div class=\"section-header\" onclick=\"toggleSection(this)\">\n                    <span>⚡ Performance & Stress Tests</span>\n                    <span class=\"toggle-icon\">▼</span>\n                </div>\n                <div class=\"section-content\">\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">SYS-20: Large Dataset Handling</div>\n                            <div class=\"test-description\">Test pagination and search with 100+ records</div>\n                            <div class=\"test-data\">Insert 100 residents, 500 reports → Test pagination (limit=50) → Response time <500ms</div>\n                            <span class=\"priority medium\">MEDIUM</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">DB-01: Database Initialization</div>\n                            <div class=\"test-description\">Verify all required tables created on startup</div>\n                            <div class=\"test-data\">Check tables: Users, Workers, Reports, Tasks, Vehicles, Invoices, AuditLogs</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                    <div class=\"test-item\">\n                        <div class=\"checkbox-wrapper\"><input type=\"checkbox\" onchange=\"updateStats()\"></div>\n                        <div class=\"test-details\">\n                            <div class=\"test-id\">DB-03: UNIQUE Constraints</div>\n                            <div class=\"test-description\">Verify email uniqueness enforcement</div>\n                            <div class=\"test-data\">Try duplicate email → 409 Conflict error</div>\n                            <span class=\"priority high\">HIGH</span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Notes Section -->\n            <div class=\"section expanded\">\n                <div class=\"section-header\" onclick=\"toggleSection(this)\">\n                    <span>📝 Testing Notes & Observations</span>\n                    <span class=\"toggle-icon\">▼</span>\n                </div>\n                <div class=\"section-content\">\n                    <textarea id=\"notes\" style=\"width: 100%; height: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: Arial, sans-serif;\" placeholder=\"Record any issues, observations, or notes during testing...\"></textarea>\n                    <button class=\"btn-secondary\" onclick=\"saveNotes()\" style=\"margin-top: 10px;\">Save Notes</button>\n                </div>\n            </div>\n            \n            <div id=\"export-section\" style=\"display: none; margin-top: 30px;\">\n                <h3>Export Results:</h3>\n                <div class=\"export-data\" id=\"export-data\"></div>\n            </div>\n        </div>\n        \n        <footer>\n            <p>EcoManage Manual Testing Checklist | Version 1.0 | Last Updated: April 29, 2026</p>\n            <p>For testing support, refer to: <strong>tests/docs/TEST_SETUP_GUIDE.md</strong></p>\n        </footer>\n    </div>\n    \n    <script>\n        function toggleSection(header) {\n            const section = header.parentElement;\n            section.classList.toggle('expanded');\n            section.classList.toggle('collapsed');\n        }\n        \n        function expandAll() {\n            document.querySelectorAll('.section').forEach(s => {\n                s.classList.add('expanded');\n                s.classList.remove('collapsed');\n            });\n        }\n        \n        function collapseAll() {\n            document.querySelectorAll('.section').forEach(s => {\n                s.classList.add('collapsed');\n                s.classList.remove('expanded');\n            });\n        }\n        \n        function updateStats() {\n            const allCheckboxes = document.querySelectorAll('.test-item input[type=\"checkbox\"]');\n            const checkedCheckboxes = document.querySelectorAll('.test-item input[type=\"checkbox\"]:checked');\n            \n            const total = allCheckboxes.length;\n            const completed = checkedCheckboxes.length;\n            const remaining = total - completed;\n            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;\n            \n            document.getElementById('total-tests').textContent = total;\n            document.getElementById('completed-tests').textContent = completed;\n            document.getElementById('remaining-tests').textContent = remaining;\n            document.getElementById('progress-percent').textContent = percent + '%';\n            document.getElementById('progress-fill').style.width = percent + '%';\n            \n            // Toggle completed styling\n            document.querySelectorAll('.test-item').forEach((item, index) => {\n                if (allCheckboxes[index].checked) {\n                    item.classList.add('completed');\n                } else {\n                    item.classList.remove('completed');\n                }\n            });\n            \n            // Save to localStorage\n            saveProgress();\n        }\n        \n        function markAllComplete() {\n            document.querySelectorAll('.test-item input[type=\"checkbox\"]').forEach(cb => {\n                cb.checked = true;\n            });\n            updateStats();\n        }\n        \n        function resetAll() {\n            if (confirm('Are you sure you want to reset all test items?')) {\n                document.querySelectorAll('.test-item input[type=\"checkbox\"]').forEach(cb => {\n                    cb.checked = false;\n                });\n                updateStats();\n            }\n        }\n        \n        function saveProgress() {\n            const progress = {};\n            document.querySelectorAll('.test-item input[type=\"checkbox\"]').forEach((cb, index) => {\n                progress[index] = cb.checked;\n            });\n            localStorage.setItem('ecomanage-test-progress', JSON.stringify(progress));\n        }\n        \n        function loadProgress() {\n            const progress = JSON.parse(localStorage.getItem('ecomanage-test-progress') || '{}');\n            document.querySelectorAll('.test-item input[type=\"checkbox\"]').forEach((cb, index) => {\n                cb.checked = progress[index] || false;\n            });\n            updateStats();\n        }\n        \n        function saveNotes() {\n            const notes = document.getElementById('notes').value;\n            localStorage.setItem('ecomanage-test-notes', notes);\n            alert('Notes saved successfully!');\n        }\n        \n        function exportResults() {\n            const progress = document.querySelectorAll('.test-item input[type=\"checkbox\"]:checked').length;\n            const total = document.querySelectorAll('.test-item input[type=\"checkbox\"]').length;\n            const notes = document.getElementById('notes').value;\n            \n            const exportData = {\n                timestamp: new Date().toISOString(),\n                completed: progress,\n                total: total,\n                percentage: Math.round((progress / total) * 100),\n                notes: notes\n            };\n            \n            document.getElementById('export-data').textContent = JSON.stringify(exportData, null, 2);\n            document.getElementById('export-section').style.display = 'block';\n        }\n        \n        // Initialize on page load\n        window.addEventListener('load', () => {\n            loadProgress();\n            const savedNotes = localStorage.getItem('ecomanage-test-notes');\n            if (savedNotes) {\n                document.getElementById('notes').value = savedNotes;\n            }\n        });\n    </script>\n</body>\n</html>\n

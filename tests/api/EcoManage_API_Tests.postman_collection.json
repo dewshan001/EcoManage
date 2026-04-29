@@ -1,0 +1,609 @@
+{
+  "info": {
+    "name": "EcoManage API Test Collection",
+    "description": "Comprehensive API testing collection for EcoManage waste management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "_postman_id": "ecomanage-api-tests-2026"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Resident",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"fullName\\\": \\\"John Doe\\\",\\n  \\\"email\\\": \\\"john@gmail.com\\\",\\n  \\\"password\\\": \\\"Password123!\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"email\\\": \\\"john@gmail.com\\\",\\n  \\\"password\\\": \\\"Password123!\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"userId\\\": 1,\\n  \\\"fullName\\\": \\\"John Updated\\\",\\n  \\\"password\\\": \\\"NewPassword456!\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/settings",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"fullName\\\": \\\"Manager Smith\\\",\\n  \\\"email\\\": \\\"mgr@gmail.com\\\",\\n  \\\"password\\\": \\\"ManagerPass123!\\\",\\n  \\\"contactNumber\\\": \\\"555-1234\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register-manager",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register-manager"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Managers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/managers",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "managers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Worker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"fullName\\\": \\\"Worker John\\\",\\n  \\\"email\\\": \\\"worker@gmail.com\\\",\\n  \\\"password\\\": \\\"WorkerPass123!\\\",\\n  \\\"workerRole\\\": \\\"Driver\\\",\\n  \\\"skill\\\": \\\"Waste Sorting\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register-worker",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register-worker"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"location\\\": \\\"Block A, Street 5\\\",\\n  \\\"description\\\": \\\"Overflowing trash bin\\\",\\n  \\\"imageUrl\\\": \\\"https://example.com/image.jpg\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resident Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports?userId=1",
+              "host": ["{{base_url}}"],
+              "path": ["reports"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"status\\\": \\\"Approved\\\",\\n  \\\"priority\\\": \\\"High\\\",\\n  \\\"scheduleDate\\\": \\\"2026-05-20\\\",\\n  \\\"linkedTaskId\\\": 10\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "{{report_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "{{report_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"reportId\\\": 1,\\n  \\\"priority\\\": \\\"High\\\",\\n  \\\"scheduleDate\\\": \\\"2026-05-20\\\",\\n  \\\"workers\\\": \\\"W001\\\",\\n  \\\"vehicleType\\\": \\\"Compactor Truck\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"status\\\": \\\"Pending Worker\\\",\\n  \\\"assignedTo\\\": \\\"W001\\\",\\n  \\\"assignedVehicle\\\": \\\"VH-001\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Register Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"vehicleId\\\": \\\"VH-001\\\",\\n  \\\"type\\\": \\\"Compactor Truck\\\",\\n  \\\"driver\\\": \\\"John Driver\\\",\\n  \\\"plateNumber\\\": \\\"XYZ-1234\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vehicles",
+              "host": ["{{base_url}}"],
+              "path": ["vehicles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Vehicles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vehicles",
+              "host": ["{{base_url}}"],
+              "path": ["vehicles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"status\\\": \\\"In Use\\\",\\n  \\\"fuelLevel\\\": 85,\\n  \\\"location\\\": \\\"Block A\\\"\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vehicles/{{vehicle_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["vehicles", "{{vehicle_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vehicle",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vehicles/{{vehicle_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["vehicles", "{{vehicle_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\\n  \\\"taskId\\\": 1,\\n  \\\"residentId\\\": 1,\\n  \\\"taskType\\\": \\\"General Waste\\\",\\n  \\\"wasteFee\\\": 20,\\n  \\\"laborFee\\\": 15,\\n  \\\"vehicleFee\\\": 25\\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/billing",
+              "host": ["{{base_url}}"],
+              "path": ["billing"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing",
+              "host": ["{{base_url}}"],
+              "path": ["billing"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resident Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing/resident/1",
+              "host": ["{{base_url}}"],
+              "path": ["billing", "resident", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Invoice Paid",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing/{{invoice_id}}/pay",
+              "host": ["{{base_url}}"],
+              "path": ["billing", "{{invoice_id}}", "pay"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing/{{invoice_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["billing", "{{invoice_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "test-admin-token-12345",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "test-user-token-12345",
+      "type": "string"
+    },
+    {
+      "key": "report_id",
+      "value": "REP-12345",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "TSK-54321",
+      "type": "string"
+    },
+    {
+      "key": "vehicle_id",
+      "value": "VH-001",
+      "type": "string"
+    },
+    {
+      "key": "invoice_id",
+      "value": "INV-1001",
+      "type": "string"
+    }
+  ]
+}

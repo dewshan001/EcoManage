@@ -1,0 +1,1045 @@
+/* === Workers.css === */
+
+.wm-root {
+    display: flex;
+    height: 100vh;
+    background: #f4f6f8;
+    overflow: hidden;
+    font-family: var(--font-primary, system-ui, -apple-system, sans-serif);
+}
+
+/* ══════════ SIDEBAR (Matches VehicleManagement) ══════════ */
+.wm-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #1b2d1e 0%, #243828 60%, #2d4230 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.22);
+    z-index: 10;
+    margin-top: 72px;
+    /* For the fixed top nav */
+}
+
+.wm-sb-nav-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 12px 20px 6px;
+    flex-shrink: 0;
+}
+
+.wm-sb-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.wm-sb-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+    transition: all 0.22s ease;
+    position: relative;
+    color: var(--text-dark);
+}
+
+.wm-sb-nav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.wm-sb-nav-item.wm-sb-active {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wm-sb-nav-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.wm-sb-nav-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.wm-sb-nav-lbl {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.88);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wm-sb-nav-desc {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wm-sb-nav-item.wm-sb-active .wm-sb-nav-lbl {
+    color: white;
+}
+
+.wm-sb-nav-item.wm-sb-active .wm-sb-nav-desc {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.wm-sb-active-dot {
+    width: 6px;
+    height: 6px;
+    background: #6ee7a0;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(110, 231, 160, 0.25);
+    position: absolute;
+    right: 16px;
+}
+
+.wm-sb-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 16px;
+    flex-shrink: 0;
+}
+
+.wm-sb-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 10px 8px;
+    flex-shrink: 0;
+}
+
+.wm-sb-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.wm-sb-stat-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.wm-sb-stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.wm-sb-stat-label {
+    flex: 1;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 500;
+}
+
+.wm-sb-stat-val {
+    font-size: 1rem;
+    font-weight: 800;
+    color: white;
+}
+
+.wm-sb-spacer {
+    flex: 1;
+}
+
+.wm-sb-register-btn {
+    margin: 12px 12px 20px;
+    padding: 11px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, rgba(56, 102, 65, 0.7), rgba(56, 102, 65, 0.4));
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s;
+    flex-shrink: 0;
+    backdrop-filter: blur(6px);
+}
+
+.wm-sb-register-btn:hover {
+    background: linear-gradient(135deg, rgba(56, 102, 65, 0.95), rgba(56, 102, 65, 0.7));
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* ══════════ MAIN AREA ══════════ */
+.wm-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-top: 72px;
+    /* Avoid global fixed nav overlap */
+}
+
+/* Topbar */
+.wm-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background: transparent;
+}
+
+.wm-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.wm-topbar-icon {
+    font-size: 2rem;
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.wm-topbar-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--text-dark);
+}
+
+.wm-topbar-sub {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.wm-kpi-row {
+    display: flex;
+    gap: 12px;
+}
+
+.wm-kpi {
+    background: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.wm-kpi-green {
+    color: #166534;
+}
+
+.wm-kpi-blue {
+    color: #1e40af;
+}
+
+.wm-kpi-amber {
+    color: #92400e;
+}
+
+/* Content Area */
+.wm-content {
+    flex: 1;
+    padding: 0 32px 32px;
+    overflow: hidden;
+    /* Prevent full page scroll, let panels scroll */
+    min-height: 0;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* ─── DASHBOARD PANELS (Moved from old layout) ─── */
+/* Main Layout Grid */
+.wm-grid-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr 340px;
+    gap: 24px;
+    height: 100%;
+    /* Fill the wm-content area */
+}
+
+/* Panels Common */
+.wm-panel {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.wm-panel-header {
+    padding: 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: #fff;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wm-panel-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wm-badge-count {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-dark);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.wm-badge-count.green {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary-color);
+}
+
+.wm-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* 1. Worker Profiles Panel */
+.wm-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wm-search-bar,
+.wm-filter-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.wm-search-bar svg,
+.wm-filter-dropdown svg {
+    position: absolute;
+    left: 12px;
+    color: var(--text-light);
+    pointer-events: none;
+}
+
+.wm-search-bar input,
+.wm-filter-dropdown select {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background: #f9fafb;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text-dark);
+    transition: all 0.2s;
+}
+
+.wm-search-bar input:focus,
+.wm-filter-dropdown select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.wm-worker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wm-worker-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    transition: all 0.2s;
+}
+
+.wm-worker-card:hover {
+    border-color: rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.wm-worker-avatar {
+    width: 42px;
+    height: 42px;
+    background: #f1f5f9;
+    color: var(--text-dark);
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.wm-worker-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wm-worker-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.wm-worker-name-row h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wm-status-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.status-available {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-duty {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-leave {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.wm-worker-meta {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wm-worker-meta .dot {
+    opacity: 0.5;
+    font-size: 0.8rem;
+}
+
+/* 2. Tasks Panel */
+.wm-task-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.wm-task-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.wm-task-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.wm-task-card.unassigned {
+    border-left: 4px solid #f59e0b;
+    /* Warning/Pending color */
+}
+
+.wm-task-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wm-priority-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.priority-high {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.priority-medium {
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.priority-low {
+    background: #10b981;
+}
+
+.wm-task-id {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.wm-task-type {
+    margin-left: auto;
+    background: #f3f4f6;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.wm-task-type.mini {
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    margin-left: 0;
+}
+
+.wm-task-location {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wm-task-location svg {
+    color: var(--primary-color);
+}
+
+.wm-task-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.wm-btn-assign {
+    width: 100%;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--text-dark);
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wm-btn-assign:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.wm-assign-dropdown-container {
+    display: flex;
+    gap: 8px;
+}
+
+.wm-assign-select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--primary-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: #f0fdf4;
+    cursor: pointer;
+    outline: none;
+}
+
+.wm-btn-cancel {
+    background: #fef2f2;
+    color: #ef4444;
+    border: none;
+    border-radius: 10px;
+    width: 38px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wm-btn-cancel:hover {
+    background: #fee2e2;
+}
+
+
+/* 3. Active Operations */
+.wm-map-placeholder {
+    height: 180px;
+    background: #e5e7eb;
+    position: relative;
+    background-image:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 20%, transparent 21%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 20%, transparent 21%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wm-map-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(16, 185, 129, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wm-map-label {
+    background: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wm-map-pulse {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: mapPulse 2s infinite;
+}
+
+@keyframes mapPulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.wm-active-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wm-active-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.wm-active-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wm-active-worker-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wm-mini-avatar {
+    width: 28px;
+    height: 28px;
+    background: #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.wm-active-location {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wm-active-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.wm-active-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.wm-btn-complete {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wm-btn-complete:hover {
+    background: #dcfce7;
+    transform: translateY(-1px);
+}
+
+.wm-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.wm-empty-state svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
+
+.wm-empty-state.success {
+    color: var(--primary-color);
+}
+
+.wm-empty-state.success svg {
+    opacity: 1;
+}
+
+/* --- Staff Roster Table --- */
+.wm-roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.wm-roster-table th {
+    text-align: left;
+    padding: 16px 20px;
+    background: #f8fafc;
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.wm-roster-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    color: var(--text-dark);
+}
+
+.wm-roster-table tbody tr {
+    transition: background 0.2s;
+}
+
+.wm-roster-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.wm-table-worker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wm-table-worker strong {
+    font-weight: 600;
+}
+
+.wm-table-cell-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+}
+
+.wm-table-cell-stack span:first-child {
+    font-weight: 600;
+    color: var(--text-light);
+    font-family: monospace;
+}
+
+.wm-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wm-btn-edit {
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.7;
+}
+
+.wm-btn-edit:hover {
+    background: #eff6ff;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.wm-btn-delete {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.6;
+}
+
+.wm-btn-delete:hover {
+    background: #fef2f2;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* --- Map Markers --- */
+.wm-map-marker {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+    transition: transform 0.2s;
+}
+
+.wm-map-marker:hover {
+    transform: translate(-50%, -100%) scale(1.1);
+    z-index: 10;
+}
+
+.wm-map-marker:hover .wm-marker-popup {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.wm-marker-pin {
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 3px solid;
+}
+
+.wm-marker-pin svg {
+    transform: rotate(45deg);
+    width: 14px;
+    height: 14px;
+}
+
+.wm-marker-pin.active {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.wm-marker-pin.pending {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.wm-marker-popup {
+    position: absolute;
+    bottom: 40px;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s;
+    pointer-events: none;
+    font-size: 0.8rem;
+}
+
+.wm-marker-popup strong {
+    font-family: monospace;
+    color: var(--primary-color);
+}
+
+.wm-marker-popup span {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 1200px) {
+    .wm-grid-layout {
+        grid-template-columns: 280px 1fr 300px;
+    }
+}
+
+@media (max-width: 900px) {
+    .wm-root {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .wm-sidebar {
+        width: 100%;
+        margin-top: 72px;
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .wm-main {
+        margin-top: 0;
+    }
+
+    .wm-grid-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .wm-panel {
+        max-height: 500px;
+    }
+}
